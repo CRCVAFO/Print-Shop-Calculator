@@ -276,34 +276,35 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
         <div class="f">
           <label>Color de camisa</label>
           <select id="shirtColor" onchange="applyShirtColor()">
-            <option value="white|light">Blanco</option>
-            <option value="natural|light">Natural / Crema</option>
-            <option value="ash|light">Ash (gris claro)</option>
-            <option value="sport_grey|medium">Sport Grey</option>
-            <option value="light_blue|medium">Azul claro</option>
-            <option value="silver|medium">Silver / Gris medio</option>
-            <option value="carolina_blue|medium">Carolina Blue</option>
-            <option value="gold|medium">Gold / Amarillo</option>
-            <option value="red|dark">Rojo</option>
-            <option value="royal|dark">Royal Blue</option>
-            <option value="forest|dark">Verde bosque</option>
-            <option value="maroon|dark">Maroon / Guinda</option>
-            <option value="purple|dark">Morado</option>
-            <option value="navy|dark">Azul navy</option>
-            <option value="dark_heather|dark">Dark Heather</option>
-            <option value="charcoal|dark">Charcoal</option>
-            <option value="black|black">Negro</option>
-            <option value="custom|light">Otro (escribe abajo)</option>
+            <option value="white|light|#F5F5F0|0">Blanco</option>
+            <option value="natural|light|#EDE0C8|0">Natural / Crema</option>
+            <option value="ash|light|#C8C8C0|0">Ash (gris claro)</option>
+            <option value="sport_grey|medium|#9CA0A4|0">Sport Grey</option>
+            <option value="light_blue|medium|#A8C8E8|0">Azul claro</option>
+            <option value="silver|medium|#A8A8B0|0">Silver / Gris medio</option>
+            <option value="carolina_blue|medium|#7BAFD4|0">Carolina Blue</option>
+            <option value="gold|medium|#E8B820|0">Gold / Amarillo</option>
+            <option value="red|dark|#C8102E|0">Rojo</option>
+            <option value="royal|dark|#1034A6|0">Royal Blue</option>
+            <option value="forest|dark|#1B5E20|0">Verde bosque</option>
+            <option value="maroon|dark|#800000|0">Maroon / Guinda</option>
+            <option value="purple|dark|#6A0DAD|0">Morado</option>
+            <option value="navy|dark|#001F5B|0">Azul navy</option>
+            <option value="dark_heather|dark|#404850|0">Dark Heather</option>
+            <option value="charcoal|dark|#36454F|0">Charcoal</option>
+            <option value="black|black|#1A1A1A|0">Negro</option>
+            <option value="neon_yellow|light|#FFFF00|1.50">Neon / Amarillo ácido (+$1.50)</option>
+            <option value="neon_pink|light|#FF1493|1.50">Neon / Rosa ácido (+$1.50)</option>
+            <option value="tie_dye|light|#CC44AA|3.00">Tie-dye (+$3.00)</option>
+            <option value="camo|dark|#5C6B3A|2.00">Camo (+$2.00)</option>
+            <option value="custom|light|#888888|0">Otro (escribe abajo)</option>
           </select>
         </div>
-        <div class="f">
-          <label>Tono de camisa (auto)</label>
-          <select id="shirtTone" onchange="checkUnderbase()">
-            <option value="light">Blanco / Claro (sin underbase)</option>
-            <option value="medium">Medio (gris, azul claro) — underbase opcional</option>
-            <option value="dark">Oscuro (negro, marino, rojo oscuro…)</option>
-            <option value="black">Negro</option>
-          </select>
+        <div class="f" style="justify-content:flex-end;">
+          <label>Vista previa</label>
+          <div id="colorSwatch" style="width:100%;height:40px;border-radius:4px;border:1px solid var(--gb);background:#F5F5F0;transition:background .2s;display:flex;align-items:center;justify-content:center;">
+            <span id="colorSwatchLabel" style="font-size:.65rem;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.5);color:#fff;letter-spacing:.05em;text-transform:uppercase;">BLANCO</span>
+          </div>
         </div>
       </div>
       <div id="shirtColorCustomBox" style="display:none;margin-top:6px;">
@@ -312,8 +313,20 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
           <input type="text" id="shirtColorCustom" placeholder="Ej: Dusty Rose, Seafoam, Pepper..." oninput="calc()">
         </div>
       </div>
+      <div id="colorUpchargeBox" style="display:none;margin-top:6px;" class="ibox warn">
+        ⚠️ <strong>Color especial</strong> — upcharge de <strong id="colorUpchargeLabel">$0.00</strong>/pieza aplicado al costo.
+      </div>
       <div id="undbaseWarn" style="display:none;margin-top:7px;" class="ibox warn">
         ⚠️ <strong>Camisa oscura detectada.</strong> Se agrega underbase blanco automáticamente.
+      </div>
+      <!-- Hidden tone selector (auto-set) -->
+      <div style="display:none;">
+        <select id="shirtTone" onchange="checkUnderbase()">
+          <option value="light">Blanco / Claro</option>
+          <option value="medium">Medio</option>
+          <option value="dark">Oscuro</option>
+          <option value="black">Negro</option>
+        </select>
       </div>
     </div>
 
@@ -1275,12 +1288,40 @@ function applyGarmentType() {
 
 // ════ SHIRT COLOR ════
 function applyShirtColor() {
-  const val = document.getElementById('shirtColor').value;
-  const [colorKey, tone] = val.split('|');
+  const sel = document.getElementById('shirtColor');
+  const parts = sel.value.split('|');
+  const colorKey = parts[0];
+  const tone = parts[1];
+  const hex = parts[2] || '#888888';
+  const upcharge = parseFloat(parts[3]) || 0;
+
+  // Update color swatch
+  const swatch = document.getElementById('colorSwatch');
+  const swatchLabel = document.getElementById('colorSwatchLabel');
+  if (swatch) {
+    swatch.style.background = hex;
+    // Pick text color based on brightness
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    const brightness = (r*299 + g*587 + b*114) / 1000;
+    swatchLabel.style.color = brightness > 140 ? '#333' : '#fff';
+    swatchLabel.textContent = sel.options[sel.selectedIndex].text.replace(/\s*\(\+.*\)/, '').toUpperCase();
+  }
+
+  // Show/hide upcharge box
+  const upBox = document.getElementById('colorUpchargeBox');
+  if (upBox) {
+    upBox.style.display = upcharge > 0 ? 'block' : 'none';
+    const lbl = document.getElementById('colorUpchargeLabel');
+    if (lbl) lbl.textContent = '$' + upcharge.toFixed(2);
+  }
+
+  // Show/hide custom text field
+  const customBox = document.getElementById('shirtColorCustomBox');
+  if (customBox) customBox.style.display = colorKey === 'custom' ? 'block' : 'none';
+
   // Auto-set tone
   document.getElementById('shirtTone').value = tone;
-  // Show/hide custom text field
-  document.getElementById('shirtColorCustomBox').style.display = colorKey === 'custom' ? 'block' : 'none';
+
   // Trigger underbase logic
   checkUnderbase();
 }
@@ -1531,6 +1572,10 @@ function calc() {
   const baseShirt = csg ? 0 : gv('shirtCost');
   const u2=gv('up2xl'), u3=gv('up3xl'), u4=gv('up4xl'), u5=gv('up5xl');
 
+  // Color upcharge (neon, tie-dye, camo, etc.)
+  const colorSel = document.getElementById('shirtColor');
+  const colorUpcharge = colorSel ? (parseFloat(colorSel.value.split('|')[3]) || 0) : 0;
+
   // Blended cost accounting for each upcharge tier
   const totalCostRaw = csg ? 0 :
     baseShirt*(szS+szM+szL+szXL) +
@@ -1538,7 +1583,7 @@ function calc() {
     (baseShirt+u3)*szXXXL +
     (baseShirt+u4)*sz4xl +
     (baseShirt+u5)*sz5xl;
-  const blendedWholesale = csg ? 0 : totalCostRaw / qty;
+  const blendedWholesale = csg ? 0 : (totalCostRaw / qty) + colorUpcharge;
 
   // Garment markup → what customer pays per shirt
   const garmentMarkup = csg ? 1.0 : gv('garmentMarkup');
@@ -1766,7 +1811,19 @@ function calc() {
   }
 
   const cn = document.getElementById('clientName').value.trim();
-  document.getElementById('qClientDisp').textContent = cn ? 'Para: '+cn : '';
+  const colorSelDisp = document.getElementById('shirtColor');
+  const colorDispParts = colorSelDisp ? colorSelDisp.value.split('|') : [];
+  const colorHex = colorDispParts[2] || '#888';
+  const colorCustomTxt = document.getElementById('shirtColorCustom') ? document.getElementById('shirtColorCustom').value.trim() : '';
+  const colorName = colorDispParts[0] === 'custom'
+    ? (colorCustomTxt || 'Color personalizado')
+    : (colorSelDisp ? colorSelDisp.options[colorSelDisp.selectedIndex].text.replace(/\s*\(\+.*\)/,'') : '');
+  document.getElementById('qClientDisp').innerHTML =
+    (cn ? `<span>Para: <strong>${cn}</strong></span> &nbsp;` : '') +
+    `<span style="display:inline-flex;align-items:center;gap:5px;">
+      <span style="width:12px;height:12px;border-radius:2px;background:${colorHex};border:1px solid rgba(255,255,255,.15);display:inline-block;flex-shrink:0;"></span>
+      <span>${colorName}</span>
+    </span>`;
 
   // ── Breakdown ──
   const div = lbl => `<div style="font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ocean);padding:7px 0 3px;margin-top:3px;border-top:1px solid var(--ob);">${lbl}</div>`;
@@ -1777,7 +1834,8 @@ function calc() {
     bk += row('Prenda del cliente ($0 costo)',0);
     bk += row('Recargo CSG',csgSur,'w');
   } else {
-    bk += row('Prenda blended wholesale',blendedWholesale);
+    bk += row('Prenda blended wholesale (sin upcharge)',blendedWholesale - colorUpcharge);
+    if (colorUpcharge > 0) bk += row('Upcharge color especial',colorUpcharge,'w');
     bk += row('Markup prenda ('+garmentMarkup.toFixed(2)+'× → cliente)',blendedRetail-blendedWholesale,'g');
   }
   bk += div('Costos del trabajo ÷ '+qty+' piezas');
@@ -2020,10 +2078,10 @@ function doCopy(taId,btnId) {
 
 // ════ INIT ════
 document.getElementById('flashOn').checked = true;
-document.getElementById('taxOn').checked = true; // Sales tax ON por default
+document.getElementById('taxOn').checked = true;
 document.getElementById('undbaseOn').addEventListener('change', calc);
-// Ensure tax starts on
 if (!gch('taxExemptOn')) document.getElementById('taxOn').checked = true;
+applyShirtColor(); // init swatch
 initQuoteNum();
 initExpiry();
 renderLocs();
