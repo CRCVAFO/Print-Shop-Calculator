@@ -246,6 +246,11 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
 .job-total-label{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
 .job-total-val{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--green);}
 
+/* Image download button */
+.img-dl-btn{display:inline-flex;align-items:center;gap:5px;background:var(--gd);border:1px solid var(--gb);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:.65rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:4px 10px;border-radius:2px;cursor:pointer;transition:all .15s;text-decoration:none;}
+.img-dl-btn:hover{border-color:var(--ocean);color:var(--ocean);}
+.img-dl-btn.downloading{opacity:.6;pointer-events:none;}
+
 /* Inventory panel */
 .inv-panel{margin-top:10px;background:var(--bg3);border:1px solid var(--gb);border-radius:4px;overflow:hidden;}
 .inv-header{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;background:var(--bg4);border-bottom:1px solid var(--gb);}
@@ -944,6 +949,11 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
 <div id="imgLightbox" class="lightbox" style="display:none;" onclick="closeLightbox()">
   <img id="lightboxImg" src="" alt="">
   <div class="lightbox-label" id="lightboxLabel"></div>
+  <button class="img-dl-btn" id="lightboxDlBtn"
+    style="position:absolute;top:16px;right:16px;background:rgba(0,0,0,.6);border-color:rgba(255,255,255,.3);color:#fff;"
+    onclick="event.stopPropagation();downloadImage(document.getElementById('lightboxImg').src, document.getElementById('lightboxLabel').textContent.replace(/[^a-z0-9]/gi,'_')+'.jpg')">
+    ⬇ Descargar
+  </button>
 </div>
 
 <!-- ═══ MODAL ═══ -->
@@ -978,13 +988,17 @@ let jobLines     = [];
 let activeLineId = null;
 let nextLineId   = 1;
 
+// Embroidery pricing — Graphxsource tier-based rates
+// Minimum charge: $10 | Rework: $10 | Name drop: $2.00
+const EMB_MIN_CHARGE  = 10.00;
+const EMB_REWORK_FEE  = 10.00;
+const EMB_NAME_DROP   = 2.00;
+
 const EMB_STITCH_RATES = [
-  { label:'< 5k',   max:5000,  price:5.00 },
-  { label:'5–8k',   max:8000,  price:6.50 },
-  { label:'8–12k',  max:12000, price:8.00 },
-  { label:'12–15k', max:15000, price:10.00 },
-  { label:'15–20k', max:20000, price:12.50 },
-  { label:'20k+',   max:99999, price:15.00 },
+  { label:'< 29,999',          max:29999, price:19.00 },
+  { label:'29,999–49,999',     max:49999, price:30.00 },
+  { label:'49,999–69,999',     max:69999, price:60.00 },
+  { label:'70,000+',           max:999999,price:85.00 },
 ];
 
 const EMB_SPM = { tshirt:800, longsleeve:750, hoodie:650, crewneck:700, polo:750, heavy:600, cap:650 };
@@ -1097,20 +1111,30 @@ function calcEmbLine(line) {
   const blended = qty > 0 ? totalGarment/qty : 0;
   const retail  = line.isCSG ? 0 : blended * line.garmentMarkup;
   const csgSur  = line.isCSG ? line.csgSurcharge : 0;
+
   const stitches = line.stitchCount||8000;
   const spm = EMB_SPM[line.embGarmentType]||800;
   const minPerPiece = stitches/spm;
   const laborPerPiece = (line.embLaborRate/60)*minPerPiece;
-  const machinePerPiece = stitches*line.embMachineCost;
+
+  // Tier-based embroidery charge (per piece, before minimum)
   const rate = EMB_STITCH_RATES.find(r => stitches<=r.max)||EMB_STITCH_RATES[EMB_STITCH_RATES.length-1];
+  const embCharge = Math.max(EMB_MIN_CHARGE, rate.price); // apply $10 minimum
+
+  // Digitizing amortized over qty
   const digitPerPiece = (line.digitizingFee||0)/qty;
-  line.unitPrice = retail + csgSur + rate.price + laborPerPiece + machinePerPiece + digitPerPiece;
+
+  // Name drop if applicable
+  const nameDropPerPiece = line.hasNameDrop ? EMB_NAME_DROP : 0;
+
+  line.unitPrice = retail + csgSur + embCharge + laborPerPiece + digitPerPiece + nameDropPerPiece;
   line.lineTotal = line.unitPrice * qty;
-  line._embMinPerPiece = minPerPiece;
+  line._embMinPerPiece  = minPerPiece;
   line._embLaborPerPiece = laborPerPiece;
-  line._embRatePerPiece = rate.price;
+  line._embRatePerPiece = embCharge;
   line._embDigitPerPiece = digitPerPiece;
-  line._embRateLabel = rate.label;
+  line._embRateLabel    = rate.label;
+  line._nameDropPerPiece = nameDropPerPiece;
 }
 
 function calcJobTotal() {
@@ -1235,37 +1259,57 @@ function buildEmbSectionHTML(line) {
   const stPre = EMB_STITCH_RATES.map((r,i) => {
     const prev = i > 0 ? EMB_STITCH_RATES[i-1].max : 0;
     const isOn = line.stitchCount > prev && line.stitchCount <= r.max;
-    const mid = Math.round((prev + r.max) / 2);
-    return `<button class="emb-sp ${isOn?'on':''}" onclick="lineField(${line.id},'stitchCount',${mid});renderJobLines()">${r.label}<br><small style="font-weight:400;">$${r.price.toFixed(2)}/pza</small></button>`;
+    const mid = i === 0 ? 15000 : i === 1 ? 39999 : i === 2 ? 59999 : 75000;
+    return `<button class="emb-sp ${isOn?'on':''}"
+      onclick="lineField(${line.id},'stitchCount',${mid});renderJobLines()"
+      >${r.label}<br><small style="font-weight:400;">$${r.price.toFixed(2)}/pza</small></button>`;
   }).join('');
+
   const minPP = line._embMinPerPiece ? line._embMinPerPiece.toFixed(1) : '—';
   const totalMin = line._embMinPerPiece && line.totalQty ? Math.round(line._embMinPerPiece*line.totalQty) : '—';
+
   return `<div class="emb-section">
-    <div style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--purple);margin-bottom:10px;">🧵 Configuración de Bordado</div>
+    <div style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--purple);margin-bottom:10px;">🧵 Bordado — Graphxsource Pricing</div>
+
     <div style="margin-bottom:10px;">
-      <label style="display:block;margin-bottom:6px;">Puntadas (stitch count)</label>
+      <label style="display:block;margin-bottom:6px;">Puntadas (stitch count) — selecciona el rango</label>
       <div class="emb-stitch-presets">${stPre}</div>
-      <input type="number" value="${line.stitchCount}" min="500" step="500" placeholder="Custom…"
+      <input type="number" value="${line.stitchCount}" min="500" step="500"
+        placeholder="Puntadas exactas…"
         oninput="lineField(${line.id},'stitchCount',this.value)">
+      <span class="hint">Mínimo de cobro: $${EMB_MIN_CHARGE.toFixed(2)} · Rework: $${EMB_REWORK_FEE.toFixed(2)}</span>
     </div>
+
     <div class="g2" style="margin-bottom:9px;">
-      <div class="f"><label>Ancho diseño (pulg)</label><input type="number" value="${line.designW}" min="0.5" step="0.5" oninput="lineField(${line.id},'designW',this.value)"></div>
-      <div class="f"><label>Alto diseño (pulg)</label><input type="number" value="${line.designH}" min="0.5" step="0.5" oninput="lineField(${line.id},'designH',this.value)"></div>
-    </div>
-    <div class="g2" style="margin-bottom:9px;">
-      <div class="f"><label>Costo digitizing ($)</label>
-        <input type="number" value="${line.digitizingFee}" min="0" step="5" oninput="lineField(${line.id},'digitizingFee',this.value)">
-        <span class="hint">Único por diseño — se amortiza en precio/pza.</span>
+      <div class="f">
+        <label>Costo digitizing ($)</label>
+        <input type="number" value="${line.digitizingFee}" min="0" step="5"
+          oninput="lineField(${line.id},'digitizingFee',this.value)">
+        <span class="hint">Se amortiza: $${line.totalQty > 0 ? ((line.digitizingFee||0)/line.totalQty).toFixed(2) : '—'}/pza</span>
       </div>
-      <div class="f"><label>Labor operador ($/hr)</label>
-        <input type="number" value="${line.embLaborRate}" min="10" step="1" oninput="lineField(${line.id},'embLaborRate',this.value)">
+      <div class="f">
+        <label>Labor operador ($/hr)</label>
+        <input type="number" value="${line.embLaborRate}" min="10" step="1"
+          oninput="lineField(${line.id},'embLaborRate',this.value)">
       </div>
     </div>
+
+    <!-- Name drop -->
+    <div class="trow" style="margin-bottom:9px;">
+      <div class="tinfo">
+        <strong style="font-size:.78rem;">Name drop (+$${EMB_NAME_DROP.toFixed(2)}/pza)</strong>
+        <small>Nombres individuales bordados por pieza</small>
+      </div>
+      <label class="tog"><input type="checkbox" ${line.hasNameDrop?'checked':''}
+        onchange="lineField(${line.id},'hasNameDrop',this.checked)"><span class="tk"></span></label>
+    </div>
+
     ${line.totalQty>0 ? `<div class="ibox blue" style="font-size:.7rem;">
       ⏱ <strong>${minPP} min/pza</strong> a ${EMB_SPM[line.embGarmentType]||800} SPM
-      · Job total: <strong>${totalMin} min</strong>
-      · Base bordado: <strong>$${(line._embRatePerPiece||0).toFixed(2)}/pza</strong> (${line._embRateLabel||''})
+      · Job total: <strong>${totalMin} min</strong> (~${(totalMin/60).toFixed(1)} hr)<br>
+      Bordado: <strong>$${(line._embRatePerPiece||0).toFixed(2)}/pza</strong> (${line._embRateLabel||''})
       · Digitizing: <strong>$${(line._embDigitPerPiece||0).toFixed(2)}/pza</strong>
+      ${line._nameDropPerPiece>0?`· Name drop: <strong>$${line._nameDropPerPiece.toFixed(2)}/pza</strong>`:''}
     </div>` : ''}
   </div>`;
 }
@@ -1580,7 +1624,45 @@ function stab(id, btn) {
   btn.classList.add('on');
 }
 
-// ════ ADVANCED GARMENT PANEL ════
+// ════ IMAGE DOWNLOAD ════
+async function downloadImage(url, filename) {
+  if (!url) return;
+  try {
+    const btn = event?.currentTarget;
+    if (btn) { btn.classList.add('downloading'); btn.textContent = '⏳ Descargando…'; }
+
+    const proxyUrl = `/api/ssa-image?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename||'garment.jpg')}`;
+    const r = await fetch(proxyUrl);
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+
+    const blob = await r.blob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename || 'garment.jpg';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+
+    if (btn) { btn.classList.remove('downloading'); btn.innerHTML = '⬇ Descargar'; }
+  } catch(e) {
+    alert('Error descargando imagen: ' + e.message);
+    const btn = event?.currentTarget;
+    if (btn) { btn.classList.remove('downloading'); btn.innerHTML = '⬇ Descargar'; }
+  }
+}
+
+function downloadAllColorImages(colorName) {
+  // Download all available images for the selected color
+  const imgs = document.querySelectorAll('.color-img-thumb');
+  imgs.forEach((img, i) => {
+    if (img.src) {
+      const ext = img.src.split('.').pop().split('?')[0] || 'jpg';
+      const fname = `${colorName.replace(/[^a-z0-9]/gi,'_')}_${['front','back','model'][i]||i}.${ext}`;
+      setTimeout(() => downloadImage(img.src, fname), i * 500); // stagger downloads
+    }
+  });
+}
 function toggleAdvancedGarment() {
   const panel = document.getElementById('advGarmentPanel');
   const btn = document.getElementById('advGarmentBtn');
@@ -1864,11 +1946,23 @@ function selectSSAColor(colorName, swatchImg, inStock, frontImg, backImg, modelI
   if (images.length > 0 && viewer) {
     viewer.style.display = 'block';
     main.src = images[0].src;
-    thumbs.innerHTML = images.map((img, i) =>
-      `<img class="color-img-thumb ${i === 0 ? 'on' : ''}" src="${img.src}" title="${img.label}"
-        onclick="selectColorImage(this,'${img.src}')"
-        onerror="this.style.display='none'">`
-    ).join('');
+    thumbs.innerHTML = images.map((img, i) => {
+      const label = ['Front','Back','Model'][i] || i;
+      const fname = `${colorName.replace(/[^a-z0-9]/gi,'_')}_${label.toLowerCase()}.jpg`;
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+        <img class="color-img-thumb ${i===0?'on':''}" src="${img.src}" title="${img.label}"
+          onclick="selectColorImage(this,'${img.src}')"
+          onerror="this.parentNode.style.display='none'">
+        <button class="img-dl-btn" onclick="downloadImage('${img.src}','${fname}')" title="Descargar ${label}">⬇ ${label}</button>
+      </div>`;
+    }).join('');
+    // Add "Download all" if more than 1 image
+    if (images.length > 1) {
+      thumbs.innerHTML += `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end;">
+        <button class="img-dl-btn" style="background:var(--od);border-color:var(--ob);color:var(--ocean);"
+          onclick="downloadAllColorImages('${colorName}')">⬇ Todas</button>
+      </div>`;
+    }
   } else if (viewer) {
     viewer.style.display = 'none';
   }
