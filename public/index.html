@@ -270,143 +270,82 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
 <!-- ═══════════════════ TAB 1: CAMISA ═══════════════════ -->
 <div id="tab-garment" class="panel on">
 
+  <!-- ① Buscar en SS&A -->
   <div class="sec">
-    <div class="slbl">SS&amp;Activewear — Precios en vivo</div>
-    <div class="ssabox">
-      <div class="ssa-top">
-        <div class="ssatxt">
-          <strong>SS&amp;Activewear — Precios de tu cuenta wholesale</strong>
-          <small>Precios en vivo desde tu cuenta SS&A. Actualización automática.</small>
-        </div>
-        <a class="ssalink" href="https://www.ssactivewear.com" target="_blank">Abrir SS&amp;A ↗</a>
-      </div>
-      <div id="ssaStatus" class="ssa-status loading">Verificando conexión con SS&A…</div>
-      <div id="ssaSearchBox" style="margin-top:10px;">
-        <div class="prod-search">
-          <input type="text" id="ssaQuery" placeholder="Buscar estilo: Gildan 5000, 3001, Comfort Colors…" onkeydown="if(event.key==='Enter')searchSSA()">
-          <button onclick="searchSSA()">Buscar</button>
-        </div>
-        <div id="ssaResults" class="prod-results" style="display:none;"></div>
-      </div>
+    <div class="slbl">Prenda</div>
+    <div class="prod-search">
+      <input type="text" id="ssaQuery" placeholder="Buscar: Gildan 5000, Bella Canvas 3001, Comfort Colors…" onkeydown="if(event.key==='Enter')searchSSA()">
+      <button onclick="searchSSA()">Buscar</button>
     </div>
+    <div id="ssaResults" class="prod-results" style="display:none;"></div>
+    <div id="ssaStatus" class="ssa-status loading" style="margin-top:4px;">Verificando conexión con SS&A…</div>
 
-    <!-- ① Garment preview banner (shown after SS&A selection) -->
-    <div id="ssaLivePrice" style="display:none;" class="ibox green"></div>
+    <!-- Banner: aparece al seleccionar garment -->
+    <div id="ssaLivePrice" style="display:none;margin-top:10px;"></div>
 
-    <!-- ② Color de la prenda — populated from SS&A -->
-    <div class="sec" style="margin-bottom:1rem;">
-      <div class="slbl">Color de la prenda</div>
-
-      <div id="colorNoGarment" class="ibox blue" style="font-size:.7rem;">
-        💡 Busca y selecciona una prenda arriba para ver sus colores desde SS&amp;A.
-        <div style="margin-top:7px;">
-          <label style="display:block;margin-bottom:4px;">O escribe el color manualmente:</label>
-          <input type="text" id="shirtColorManual" placeholder="Ej: Black, Navy, Sport Grey…" oninput="setManualColor(this.value)">
-        </div>
-      </div>
-
-      <div id="colorFromSSA" style="display:none;">
-        <div id="colorSwatches" class="color-swatches"></div>
-        <div id="colorSelectedBox" class="color-selected" style="display:none;">
-          <div class="color-chip" id="colorChip"></div>
-          <span id="colorSelectedName" style="font-weight:600;"></span>
-          <span id="colorStockBadge" style="font-size:.62rem;margin-left:auto;"></span>
-        </div>
-        <div id="undbaseWarn" style="display:none;margin-top:7px;" class="ibox warn"></div>
-      </div>
-
-      <div id="colorManualOnly" style="display:none;">
-        <div class="f">
-          <label>Color de camisa</label>
-          <input type="text" id="shirtColorManual2" placeholder="Ej: Black, Navy, Sport Grey…" oninput="setManualColor(this.value)">
-        </div>
-        <div id="undbaseWarn2" style="display:none;margin-top:7px;" class="ibox warn"></div>
-      </div>
-
-      <select id="shirtTone" style="display:none;" onchange="checkUnderbase()">
-        <option value="light">Claro</option>
-        <option value="medium">Medio</option>
-        <option value="dark">Oscuro</option>
-        <option value="black">Negro</option>
-      </select>
+    <!-- Placeholder: antes de seleccionar -->
+    <div id="garmentPlaceholder" style="margin-top:8px;" class="ibox blue" style="font-size:.7rem;">
+      💡 Busca un estilo arriba para ver precio, colores y tallas disponibles desde tu cuenta SS&amp;A.
     </div>
+  </div>
 
-    <!-- ③ Tipo de prenda -->
-    <div class="sec" style="margin-bottom:1rem;">
-      <div class="slbl">Tipo de prenda</div>
+  <!-- ② Color — aparece después de seleccionar garment -->
+  <div id="colorSection" style="display:none;" class="sec">
+    <div class="slbl">Color</div>
+    <div id="colorSwatches" class="color-swatches"></div>
+    <div id="colorSelectedBox" class="color-selected" style="display:none;">
+      <div class="color-chip" id="colorChip"></div>
+      <span id="colorSelectedName" style="font-weight:600;"></span>
+      <span id="colorStockBadge" style="font-size:.62rem;margin-left:auto;"></span>
+    </div>
+    <div id="undbaseWarn" style="display:none;margin-top:7px;" class="ibox warn"></div>
+    <!-- Manual fallback -->
+    <div id="colorManualFallback" style="display:none;margin-top:6px;">
+      <input type="text" id="shirtColorManual" placeholder="Escribe el color manualmente…" oninput="setManualColor(this.value)">
+    </div>
+  </div>
+
+  <!-- Hidden elements needed by calc -->
+  <select id="shirtTone" style="display:none;" onchange="checkUnderbase()">
+    <option value="light">Claro</option>
+    <option value="medium">Medio</option>
+    <option value="dark">Oscuro</option>
+    <option value="black">Negro</option>
+  </select>
+  <div id="colorNoGarment" style="display:none;"></div>
+  <div id="colorFromSSA" style="display:none;"></div>
+  <div id="colorManualOnly" style="display:none;"></div>
+  <div id="undbaseWarn2" style="display:none;"></div>
+
+  <!-- ③ Tipo + CSG — una sola fila -->
+  <div class="sec">
+    <div class="g2">
       <div class="f">
         <label>Tipo de prenda</label>
         <select id="garmentType" onchange="applyGarmentType()">
           <option value="tshirt">T-Shirt / Tank</option>
-          <option value="longsleeve">Long Sleeve (+$0.50/pza)</option>
-          <option value="hoodie">Hoodie (+$1.50/pza · velocidad -35%)</option>
-          <option value="crewneck">Crewneck (+$1.25/pza · velocidad -30%)</option>
-          <option value="polo">Polo (+$0.50/pza · velocidad -20%)</option>
-          <option value="heavy">Heavy/Jacket (+$2.50/pza · velocidad -50%)</option>
+          <option value="longsleeve">Long Sleeve</option>
+          <option value="hoodie">Hoodie</option>
+          <option value="crewneck">Crewneck</option>
+          <option value="polo">Polo</option>
+          <option value="heavy">Heavy / Jacket</option>
         </select>
       </div>
-    </div>
-
-    <!-- ④ CSG toggle -->
-    <div class="trow" id="csgRow">
-      <div class="tinfo">
-        <strong>Cliente trae sus propias camisas (CSG)</strong>
-        <small>Recargo por riesgo de misprint + waiver requerido antes de producir</small>
-      </div>
-      <label class="tog"><input type="checkbox" id="csgOn" onchange="toggleCSG()"><span class="tk"></span></label>
-    </div>
-
-    <!-- ⑤ Normal shirt section: cost fields only (no presets — use SS&A search above) -->
-    <div id="shirtSection">
-      <div class="g2">
-        <div class="f">
-          <label>Costo camisa S–XL ($/c/u)</label>
-          <input type="number" id="shirtCost" value="4.50" min="0" step=".25" oninput="calc()">
-          <span class="hint">Se llena automáticamente al seleccionar un estilo en SS&A.</span>
-        </div>
-        <div class="f">
-          <label>Markup prenda (×)</label>
-          <input type="number" id="garmentMarkup" value="1.70" min="1" max="3" step=".05" oninput="calc()">
-          <span class="hint">1.7× = cobras $7.65 por una camisa de $4.50.</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Size upcharges -->
-    <div id="sizeUpchargeSection">
-      <div class="slbl">Recargos por talla</div>
-      <div class="g4">
-        <div class="f"><label>2XL extra</label><input type="number" id="up2xl" value="2.00" min="0" step=".25" oninput="calc()"></div>
-        <div class="f"><label>3XL extra</label><input type="number" id="up3xl" value="4.00" min="0" step=".25" oninput="calc()"></div>
-        <div class="f"><label>4XL extra</label><input type="number" id="up4xl" value="6.00" min="0" step=".25" oninput="calc()"></div>
-        <div class="f"><label>5XL extra</label><input type="number" id="up5xl" value="8.00" min="0" step=".25" oninput="calc()"></div>
-      </div>
-      <span class="hint">Upcharges reales SS&A 2026. Se añaden al costo blended antes del markup.</span>
-    </div>
-
-    <!-- CSG section -->
-    <div id="csgSection" style="display:none;">
-      <div class="ibox danger">
-        🔴 <strong>CSG — WAIVER OBLIGATORIO antes de aceptar el trabajo.</strong> El cliente debe firmar que el shop no es responsable por misprints, daños o scorching en su ropa.
-      </div>
-      <div class="g2">
-        <div class="f">
-          <label>Recargo CSG ($/camisa)</label>
-          <input type="number" id="csgSurcharge" value="6.00" min="0" step=".50" oninput="calc()">
-          <span class="hint">Estándar industria: $4–5 ropa básica, $6–8 premium (Carhartt, Comfort Colors), $10–12 luxury (&gt;$30 retail). Waiver firmado obligatorio antes de producir.</span>
-        </div>
-        <div class="f">
-          <label>Mínimo CSG (piezas)</label>
-          <input type="number" id="csgMin" value="36" min="1" step="1" oninput="calc()">
-          <span class="hint">Shops pro: mínimo 36 para CSG (no 24).</span>
+      <div class="f" style="justify-content:flex-end;">
+        <label style="margin-bottom:8px;">Cliente trae camisas (CSG)</label>
+        <div class="trow" id="csgRow" style="margin-bottom:0;">
+          <div class="tinfo">
+            <strong style="font-size:.78rem;">CSG — waiver requerido</strong>
+          </div>
+          <label class="tog"><input type="checkbox" id="csgOn" onchange="toggleCSG()"><span class="tk"></span></label>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Size breakdown — 8 tallas -->
+  <!-- ④ Tallas -->
   <div class="sec">
-    <div class="slbl">Desglose por talla</div>
+    <div class="slbl">Cantidad por talla</div>
     <div class="sizemix">
       <div class="szf"><label>S</label><input type="number" id="sz_s" value="0" min="0" oninput="calc()"></div>
       <div class="szf"><label>M</label><input type="number" id="sz_m" value="0" min="0" oninput="calc()"></div>
@@ -417,24 +356,80 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
       <div class="szf"><label>4XL</label><input type="number" id="sz_4xl" value="0" min="0" oninput="calc()"></div>
       <div class="szf"><label>5XL</label><input type="number" id="sz_5xl" value="0" min="0" oninput="calc()"></div>
     </div>
-    <div style="font-size:.72rem;color:var(--muted);">
+    <div style="font-size:.72rem;color:var(--muted);margin-top:4px;">
       Total: <strong id="qtyDisp" style="color:var(--white);">0</strong> piezas &nbsp;|&nbsp;
       Costo blended: <strong id="blendDisp" style="color:var(--ocean);">—</strong>
     </div>
   </div>
 
-  <!-- Minimum order -->
+  <!-- ⑤ Avanzado — colapsado por default -->
   <div class="sec">
-    <div class="slbl">Mínimo de pedido</div>
-    <div class="g2">
-      <div class="f">
-        <label>Mínimo de piezas</label>
-        <input type="number" id="minOrder" value="24" min="1" step="1" oninput="calc()">
+    <button onclick="toggleAdvancedGarment()" style="background:none;border:1px solid var(--gb);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:7px 14px;border-radius:3px;cursor:pointer;width:100%;text-align:left;transition:all .15s;" id="advGarmentBtn">
+      ▶ Opciones avanzadas (markup, upcharges, mínimo de pedido)
+    </button>
+    <div id="advGarmentPanel" style="display:none;margin-top:12px;">
+
+      <!-- Costo y markup -->
+      <div id="shirtSection">
+        <div class="g2" style="margin-bottom:9px;">
+          <div class="f">
+            <label>Costo camisa S–XL ($/c/u)</label>
+            <input type="number" id="shirtCost" value="4.50" min="0" step=".25" oninput="calc()">
+            <span class="hint">Se llena automáticamente desde SS&A.</span>
+          </div>
+          <div class="f">
+            <label>Markup prenda (×)</label>
+            <input type="number" id="garmentMarkup" value="1.70" min="1" max="3" step=".05" oninput="calc()">
+            <span class="hint">1.7× default. Hoodie/Crewneck usan 1.8×.</span>
+          </div>
+        </div>
       </div>
-      <div class="f">
-        <label>Recargo pedido pequeño ($)</label>
-        <input type="number" id="smallOrderFee" value="20" min="0" step="5" oninput="calc()">
+
+      <!-- Upcharges por talla -->
+      <div id="sizeUpchargeSection">
+        <div class="slbl">Upcharges por talla</div>
+        <div class="g4">
+          <div class="f"><label>2XL +$</label><input type="number" id="up2xl" value="2.00" min="0" step=".25" oninput="calc()"></div>
+          <div class="f"><label>3XL +$</label><input type="number" id="up3xl" value="4.00" min="0" step=".25" oninput="calc()"></div>
+          <div class="f"><label>4XL +$</label><input type="number" id="up4xl" value="6.00" min="0" step=".25" oninput="calc()"></div>
+          <div class="f"><label>5XL +$</label><input type="number" id="up5xl" value="8.00" min="0" step=".25" oninput="calc()"></div>
+        </div>
+        <span class="hint">Se llenan automáticamente desde SS&A al seleccionar el estilo.</span>
       </div>
+
+      <!-- CSG detail -->
+      <div id="csgSection" style="display:none;margin-top:9px;">
+        <div class="ibox danger" style="font-size:.72rem;">
+          🔴 <strong>CSG — WAIVER OBLIGATORIO.</strong> El cliente firma que el shop no es responsable por misprints, daños o scorching.
+        </div>
+        <div class="g2">
+          <div class="f">
+            <label>Recargo CSG ($/camisa)</label>
+            <input type="number" id="csgSurcharge" value="6.00" min="0" step=".50" oninput="calc()">
+            <span class="hint">$4–5 básica · $6–8 premium · $10–12 luxury</span>
+          </div>
+          <div class="f">
+            <label>Mínimo CSG (piezas)</label>
+            <input type="number" id="csgMin" value="36" min="1" step="1" oninput="calc()">
+          </div>
+        </div>
+      </div>
+
+      <!-- Mínimo de pedido -->
+      <div style="margin-top:9px;">
+        <div class="slbl">Mínimo de pedido</div>
+        <div class="g2">
+          <div class="f">
+            <label>Mínimo de piezas</label>
+            <input type="number" id="minOrder" value="24" min="1" step="1" oninput="calc()">
+          </div>
+          <div class="f">
+            <label>Recargo pedido pequeño ($)</label>
+            <input type="number" id="smallOrderFee" value="20" min="0" step="5" oninput="calc()">
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 
@@ -1114,23 +1109,19 @@ async function initSSA() {
       ssaConnected = true;
       st.className = 'ssa-status ok';
       st.textContent = '✓ Conectado a SS&A — precios de tu cuenta wholesale en vivo.';
-      document.getElementById('ssaSearchBox').innerHTML = `
-        <div class="prod-search">
-          <input type="text" id="ssaQuery" placeholder="Buscar: Gildan 5000, Bella Canvas 3001, Comfort Colors…" onkeydown="if(event.key==='Enter')searchSSA()">
-          <button onclick="searchSSA()">Buscar</button>
-        </div>
-        <div id="ssaResults" class="prod-results" style="display:none;"></div>`;
     } else {
       st.className = 'ssa-status err';
       st.textContent = '⚠ No se pudo conectar a SS&A (error ' + r.status + '). Verifica las env vars en Vercel.';
-      document.getElementById('colorNoGarment').style.display = 'none';
-      document.getElementById('colorManualOnly').style.display = 'block';
+      document.getElementById('colorManualFallback').style.display = 'block';
+      document.getElementById('colorSection').style.display = 'block';
+      document.getElementById('garmentPlaceholder').style.display = 'none';
     }
   } catch(e) {
     st.className = 'ssa-status err';
     st.textContent = '⚠ Sin conexión al proxy. ¿Está desplegado en Vercel?';
-    document.getElementById('colorNoGarment').style.display = 'none';
-    document.getElementById('colorManualOnly').style.display = 'block';
+    document.getElementById('colorManualFallback').style.display = 'block';
+    document.getElementById('colorSection').style.display = 'block';
+    document.getElementById('garmentPlaceholder').style.display = 'none';
   }
 }
 
@@ -1193,13 +1184,11 @@ async function loadStylePrices(styleID, name) {
       if (x4)   document.getElementById('up4xl').value = (x4.customerPrice   - sxl.customerPrice).toFixed(2);
       if (x5)   document.getElementById('up5xl').value = (x5.customerPrice   - sxl.customerPrice).toFixed(2);
 
-      // ── Render color swatches ──
+      // ── Show color section ──
       const colors = data.colors || [];
+      document.getElementById('garmentPlaceholder').style.display = 'none';
+      document.getElementById('colorSection').style.display = 'block';
       if (colors.length > 0) {
-        document.getElementById('colorNoGarment').style.display = 'none';
-        document.getElementById('colorFromSSA').style.display = 'block';
-        document.getElementById('colorManualOnly').style.display = 'none';
-
         const swatchContainer = document.getElementById('colorSwatches');
         swatchContainer.innerHTML = colors.map(c => {
           const oos = !c.inStock ? ' oos' : '';
@@ -1282,6 +1271,17 @@ function stab(id, btn) {
   document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
   document.getElementById('tab-'+id).classList.add('on');
   btn.classList.add('on');
+}
+
+// ════ ADVANCED GARMENT PANEL ════
+function toggleAdvancedGarment() {
+  const panel = document.getElementById('advGarmentPanel');
+  const btn = document.getElementById('advGarmentBtn');
+  const open = panel.style.display === 'block';
+  panel.style.display = open ? 'none' : 'block';
+  btn.textContent = open
+    ? '▶ Opciones avanzadas (markup, upcharges, mínimo de pedido)'
+    : '▼ Opciones avanzadas (markup, upcharges, mínimo de pedido)';
 }
 
 // ════ LIGHTBOX ════
