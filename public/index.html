@@ -411,6 +411,9 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
     <div class="slbl">Ubicaciones de print</div>
     <div class="loc-cards" id="locCards"></div>
     <button class="add-loc" onclick="addLoc()">+ Agregar ubicación</button>
+    <div id="wbWarnBox" style="display:none;margin-top:8px;" class="ibox warn">
+      ⚠️ <strong>Water-based / Discharge detectado.</strong> La velocidad se reduce 30%, waste aumenta, y se necesita operador intermedio+. El recargo de water-based se aplica automáticamente en el cálculo.
+    </div>
     <div id="colorWarning" style="display:none;margin-top:10px;" class="ibox danger">
       ⚠️ <strong>Tu prensa tiene máximo 5 colores por pasada</strong> (6 cabezas − 1 flash). Para 6+ colores necesitas split-printing (2 pasadas) = +$25 setup adicional, velocidad −20%.
     </div>
@@ -499,7 +502,7 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
     <div class="trow" id="repeatRow">
       <div class="tinfo">
         <strong>Reorden — pantallas ya quemadas</strong>
-        <small>Válido dentro de 12 meses. Después se recobran pantallas.</small>
+        <small>Válido dentro de <strong>12 meses</strong>. Después se recobran pantallas completas.</small>
       </div>
       <label class="tog"><input type="checkbox" id="repeatOn" onchange="toggleRepeat()"><span class="tk"></span></label>
     </div>
@@ -772,24 +775,37 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
 
   <div class="sec">
     <div class="slbl">Turnaround — tiempo de entrega</div>
-    <div class="tntags" style="grid-template-columns:repeat(3,1fr);">
+    <div class="tntags" style="grid-template-columns:repeat(5,1fr);">
       <div class="tntag on" data-rush="0" onclick="setTurnaround(this)">
         <span class="tn-name">Estándar</span>
-        <span class="tn-days">7–10 días hábiles</span>
+        <span class="tn-days">7–10 días</span>
         <span class="tn-sur" style="color:var(--green);">Sin recargo</span>
+      </div>
+      <div class="tntag" data-rush="0.10" onclick="setTurnaround(this)">
+        <span class="tn-name">Rápido</span>
+        <span class="tn-days">5–7 días</span>
+        <span class="tn-sur" style="color:var(--ocean);">+10%</span>
       </div>
       <div class="tntag" data-rush="0.25" onclick="setTurnaround(this)">
         <span class="tn-name">Rush</span>
-        <span class="tn-days">3–5 días hábiles</span>
-        <span class="tn-sur" style="color:var(--warn);">+25% job completo</span>
+        <span class="tn-days">3–5 días</span>
+        <span class="tn-sur" style="color:var(--warn);">+25%</span>
+      </div>
+      <div class="tntag" data-rush="0.40" onclick="setTurnaround(this)">
+        <span class="tn-name">Urgente</span>
+        <span class="tn-days">2–3 días</span>
+        <span class="tn-sur" style="color:var(--warn);">+40%</span>
       </div>
       <div class="tntag" data-rush="0.50" onclick="setTurnaround(this)">
         <span class="tn-name">Super Rush</span>
-        <span class="tn-days">24–48 horas</span>
-        <span class="tn-sur" style="color:var(--danger);">+50% job completo</span>
+        <span class="tn-days">24–48 hr</span>
+        <span class="tn-sur" style="color:var(--danger);">+50%</span>
       </div>
     </div>
     <div class="hint warn" style="margin-top:4px;">⚠️ Rush se aplica sobre el subtotal COMPLETO (garment + decoración + fees), no solo producción.</div>
+    <div id="rushComplexWarn" style="display:none;margin-top:5px;" class="ibox danger" style="font-size:.7rem;">
+      ⚠️ <strong>Rush no recomendado</strong> para este job: 4+ colores o underbase activo. Confirma viabilidad con tu operadora antes de prometer.
+    </div>
   </div>
 
   <div class="sec">
@@ -816,6 +832,13 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
         <small>Muestra en el quote el monto del depósito y balance.</small>
       </div>
       <label class="tog"><input type="checkbox" id="depositOn" onchange="calc()"><span class="tk"></span></label>
+    </div>
+    <div class="trow">
+      <div class="tinfo">
+        <strong>Net 30 — Crédito al cliente</strong>
+        <small>Aplica recargo +2.5% por riesgo de pago tardío.</small>
+      </div>
+      <label class="tog"><input type="checkbox" id="net30On" onchange="calc()"><span class="tk"></span></label>
     </div>
     <div class="trow">
       <div class="tinfo">
@@ -877,7 +900,7 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
       <div class="f">
         <label>Quote válido hasta</label>
         <input type="date" id="quoteExpiry" oninput="calc()">
-        <span class="hint">Precios SS&A cambian. Recomendado: 30 días.</span>
+        <span class="hint">⚠️ Precios SS&A cambian 1-3 veces/año. Recomendado: 30 días.</span>
       </div>
       <div class="f">
         <label>Días de validez</label>
@@ -986,7 +1009,7 @@ const LOC_NAMES = ['Front','Back','Left chest','Right chest','Left sleeve','Righ
 const INK_TYPES = [
   [1.0,'Plastisol'],
   [1.6,'Water-based (+60%)'],
-  [1.8,'Discharge (+80%)'],
+  [1.8,'Discharge (+80%) — solo 100% algodón'],
   [1.6,'Metallic'],
   [2.2,'Glitter (+120%)'],
   [1.8,'Shimmer/Pearl'],
@@ -994,7 +1017,7 @@ const INK_TYPES = [
   [2.5,'Reflective (+150%)'],
   [2.5,'High-density 3D'],
   [1.15,'Soft-hand additive'],
-  [2.0,'Puff / Foil'],
+  [2.2,'Puff / Foil'],
   [1.4,'Fluorescent/Neon'],
 ];
 
@@ -1278,6 +1301,10 @@ function locChange(id, field, val) {
   else if (field==='colors') { l.colors=Math.max(1,parseInt(val)||1); }
   else if (field==='w'||field==='h') { l[field]=Math.max(0.1,parseFloat(val)||0.1); }
   else if (field==='inkMult') { l.inkMult=parseFloat(val)||1; }
+  // Water-based warning
+  const hasWB = locs.some(l => l.inkMult >= 1.6 && l.inkMult <= 1.8);
+  const wbWarn = document.getElementById('wbWarnBox');
+  if (wbWarn) wbWarn.style.display = hasWB ? 'block' : 'none';
   renderLocs(); calc();
 }
 function applySize(id,w,h) {
@@ -1523,9 +1550,11 @@ function calc() {
 
   // CC fee
   const ccFeeRate = gch('ccFeeOn') ? 0.029 : 0;
+  const net30Rate = gch('net30On') ? 0.025 : 0;
   const ccFeePerPiece = preTaxWithRush * ccFeeRate + (gch('ccFeeOn') ? 0.30/qty : 0);
+  const net30PerPiece = preTaxWithRush * net30Rate;
 
-  const pricePerPiece = preTaxWithRush + taxPerPiece + ccFeePerPiece;
+  const pricePerPiece = preTaxWithRush + taxPerPiece + ccFeePerPiece + net30PerPiece;
 
   const totalJob = pricePerPiece * qty;
   const grossProfit = (decorationMargin + (blendedRetail - blendedWholesale) + screensPerPiece - (screensCostInternal/qty)) * qty;
@@ -1609,6 +1638,7 @@ function calc() {
   if (gch('personOn')) bk += row('Personalización ('+gs('personMethod')+')',personCost,'s');
   if (taxRate>0) bk += row('Sales Tax Jefferson Parish (9.75%)',taxPerPiece,'b');
   if (gch('ccFeeOn')) bk += row('CC processing fee',ccFeePerPiece,'w');
+  if (gch('net30On')) bk += row('Net 30 recargo (2.5%)',net30PerPiece,'w');
   document.getElementById('bkRows').innerHTML = bk;
 
   // ── Alerts ──
@@ -1623,6 +1653,12 @@ function calc() {
   if (locs.some(l=>l.inkMult>=1.6 && !l.inkMult==1.6) || locs.some(l=>l.inkMult>=1.6)) {
     const wbLoc = locs.find(l=>l.inkMult>=1.6);
     if (wbLoc && expLevel==='beginner') alerts.push({t:'w',m:'⚠ Water-based / specialty ink con operador principiante — requiere experiencia intermedia mínima.'});
+  }
+  // Rush complexity warning
+  const rushWarnEl = document.getElementById('rushComplexWarn');
+  if (rushWarnEl) {
+    const isComplex = totalColors >= 4 || undbaseOn;
+    rushWarnEl.style.display = (turnaroundRate > 0 && isComplex) ? 'block' : 'none';
   }
   document.getElementById('alertsBox').innerHTML = alerts.map(a=>`<div class="alert ${a.t}">${a.m}</div>`).join('');
 
@@ -1644,6 +1680,7 @@ function renderTiers(blendedWholesale, blendedRetail, garmentMarkup, csg, csgSur
   const overheadPct = gv('overhead')/100;
   const taxRate = (gch('taxOn') && !gch('taxExemptOn')) ? 0.0975 : 0;
   const ccFeeRate = gch('ccFeeOn') ? 0.029 : 0;
+  const net30Rate = gch('net30On') ? 0.025 : 0;
 
   function at(q) {
     const extra = (Math.ceil(q/(1-spoilRate))-q)+testShirts;
@@ -1736,6 +1773,7 @@ function buildQuoteText() {
   t += `Precio por pieza: ${unit}\n`;
   t += `Total del trabajo: ${total}\n`;
   t += `Tu ganancia bruta estimada: ${profit}\n`;
+  if (gch('net30On')) t += `Net 30 — Crédito con recargo 2.5%\n`;
   if (taxExempt) {
     t += `Impuesto: EXENTO — ${taxExemptCert||'Certificado en archivo'}\n`;
   } else if (gch('taxOn')) {
@@ -1748,7 +1786,11 @@ function buildQuoteText() {
   }
   t += `\n${'-'.repeat(40)}\n`;
   if (mText) t += `Política de misprints:\n${mText}\n\n`;
-  t += `OVPL — Kenner, Louisiana\n${qn}\n`;
+  t += `\nNOTAS IMPORTANTES:\n`;
+  t += `- Colores Pantone (PMS) se aproximan con ±5% tolerancia. Pantalla física puede variar.\n`;
+  t += `- 2% misprints tolerados en screen printing. Defectos adicionales se reimprimen sin costo.\n`;
+  t += `- Aprobación de arte/mockup requerida antes de producción. Cambios después = $25 + retraso.\n`;
+  t += `\nOVPL — Kenner, Louisiana\n${qn}\n`;
   t += `Precios sujetos a cambio. Quote válido 30 días.`;
   return t;
 }
