@@ -276,9 +276,10 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
         <div class="f">
           <label>Tono de camisa</label>
           <select id="shirtTone" onchange="checkUnderbase()">
-            <option value="light">Claro / Blanco — sin underbase</option>
+            <option value="light">Blanco / Claro (sin underbase)</option>
             <option value="medium">Medio (gris, azul claro) — underbase opcional</option>
-            <option value="dark">Oscuro (negro, azul marino, rojo oscuro…)</option>
+            <option value="dark">Oscuro (negro, marino, rojo oscuro…)</option>
+            <option value="black">Negro</option>
           </select>
         </div>
         <div class="f">
@@ -288,11 +289,13 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
             <option value="longsleeve">Long Sleeve (+$0.50/pza)</option>
             <option value="hoodie">Hoodie (+$1.50/pza · velocidad -35%)</option>
             <option value="crewneck">Crewneck (+$1.25/pza · velocidad -30%)</option>
+            <option value="polo">Polo (+$0.50/pza · velocidad -20%)</option>
+            <option value="heavy">Heavy/Jacket (+$2.50/pza · velocidad -50%)</option>
           </select>
         </div>
       </div>
-      <div id="undbaseWarn" style="display:none;" class="ibox warn" style="margin-top:7px;">
-        ⚠️ <strong>Camisa oscura detectada.</strong> Se recomienda underbase blanco — esto agrega <strong>+1 pantalla automáticamente</strong> y reduce velocidad ~30%. Activa el toggle en Tab ③ Pantallas.
+      <div id="undbaseWarn" style="display:none;" class="ibox warn">
+        ⚠️ <strong>Camisa oscura detectada.</strong> Se agrega underbase blanco automáticamente.
       </div>
     </div>
 
@@ -357,7 +360,7 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
         <div class="f">
           <label>Recargo CSG ($/camisa)</label>
           <input type="number" id="csgSurcharge" value="6.00" min="0" step=".50" oninput="calc()">
-          <span class="hint">Estándar industria: $4–8. Ropa premium (&gt;$20 retail) = $8–12.</span>
+          <span class="hint">Estándar industria: $4–5 ropa básica, $6–8 premium (Carhartt, Comfort Colors), $10–12 luxury (&gt;$30 retail). Waiver firmado obligatorio antes de producir.</span>
         </div>
         <div class="f">
           <label>Mínimo CSG (piezas)</label>
@@ -412,7 +415,8 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
     <div class="loc-cards" id="locCards"></div>
     <button class="add-loc" onclick="addLoc()">+ Agregar ubicación</button>
     <div id="wbWarnBox" style="display:none;margin-top:8px;" class="ibox warn">
-      ⚠️ <strong>Water-based / Discharge detectado.</strong> La velocidad se reduce 30%, waste aumenta, y se necesita operador intermedio+. El recargo de water-based se aplica automáticamente en el cálculo.
+      ⚠️ <strong>Water-based detectado — velocidad reducida 30%, waste +50%, costo pantalla +$2 por ubicación WB.</strong> Requiere operador intermedio+.
+      <div id="dischargeWarn" style="display:none;margin-top:5px;color:var(--danger);">🔴 <strong>Discharge requiere tela 100% algodón natural sin tratamiento anti-bleed ni silicon coating.</strong></div>
     </div>
     <div id="colorWarning" style="display:none;margin-top:10px;" class="ibox danger">
       ⚠️ <strong>Tu prensa tiene máximo 5 colores por pasada</strong> (6 cabezas − 1 flash). Para 6+ colores necesitas split-printing (2 pasadas) = +$25 setup adicional, velocidad −20%.
@@ -430,7 +434,7 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
       <div class="f">
         <label>Labor burden (×)</label>
         <input type="number" id="laborBurden" value="1.25" min="1" max="2" step=".05" oninput="calc()">
-        <span class="hint">Tu costo real: sueldo × 1.25 (FICA, workers comp, etc.). Industria: 1.2–1.4×.</span>
+        <span class="hint">Tu costo real: sueldo × 1.25 = incluye FICA 7.65%, SUI Louisiana ~2%, Workers Comp ~2.5%. Sin benefits. Con benefits básicos usar 1.35.</span>
       </div>
     </div>
   </div>
@@ -502,7 +506,7 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
     <div class="trow" id="repeatRow">
       <div class="tinfo">
         <strong>Reorden — pantallas ya quemadas</strong>
-        <small>Válido dentro de <strong>12 meses</strong>. Después se recobran pantallas completas.</small>
+        <small>Válido dentro de <strong>12 meses</strong>. Después de 12 meses se cobran pantallas completas.</small>
       </div>
       <label class="tog"><input type="checkbox" id="repeatOn" onchange="toggleRepeat()"><span class="tk"></span></label>
     </div>
@@ -555,7 +559,7 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
         <div class="f">
           <label>Fee pantalla reorden</label>
           <input type="number" id="screenFeeReorder" value="0" min="0" step="5" oninput="calc()">
-          <span class="hint">Cobrar $0 en reorden &lt;12 meses. $10–15 si ya pasó más tiempo.</span>
+          <span class="hint">Válido dentro de 12 meses. Cobrar $0 en reorder &lt;12 meses. Cobrar $10–15 si ya pasó más tiempo. Después de 12 meses: pantallas completas.</span>
         </div>
       </div>
       <div class="hint" style="margin-top:5px;">Pantallas totales: <span id="scSummary" style="color:var(--ocean);font-weight:600;">—</span></div>
@@ -603,7 +607,11 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
       </div>
       <div id="halftonePanel" style="display:none;margin-top:7px;">
         <div class="ibox blue" style="font-size:.7rem;">
-          Halftones/SimProc/Index: +$3 por pantalla (costo interno), +$30 art fee automático, misprint rate +2%.
+          <strong>Halftones/SimProc/Index activos:</strong><br>
+          ✦ +$3.00 al costo interno por pantalla<br>
+          ✦ +15% sobre labor de run<br>
+          ✦ +$30 al art fee automáticamente<br>
+          ✦ Misprint rate +2% (más difícil de imprimir)
         </div>
       </div>
 
@@ -630,11 +638,20 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
   </div>
 
   <div class="sec">
-    <div class="slbl">Envío / otros costos fijos</div>
+    <div class="slbl">Envío / entrega</div>
+    <div class="f" style="margin-bottom:9px;">
+      <label>Método de entrega</label>
+      <select id="deliveryMethod" onchange="applyDeliveryMethod()">
+        <option value="pickup">Pickup en shop (sin cargo)</option>
+        <option value="local">Delivery local ($15–$50)</option>
+        <option value="ship">Envío (carrier — ingresar costo)</option>
+      </select>
+    </div>
     <div class="g2">
       <div class="f">
-        <label>Envío / entrega ($)</label>
+        <label>Costo envío / entrega ($)</label>
         <input type="number" id="shipFee" value="0" min="0" step="5" oninput="calc()">
+        <span id="shipFeeHint" class="hint">Pickup: $0. Delivery local: $15–50. Carrier: según cotización.</span>
       </div>
       <div class="f">
         <label>Otros costos fijos ($)</label>
@@ -650,14 +667,17 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
 
   <div class="sec">
     <div class="slbl">Nivel de experiencia del operador</div>
+    <div class="ibox blue" style="font-size:.7rem;margin-bottom:8px;">
+      💡 <strong>Tienes 1 operadora</strong> — selecciona el nivel que corresponde y déjalo fijo. Los tres niveles son para cuando contrates más personal.
+    </div>
     <div class="expg">
       <button class="expb" data-exp="beginner" onclick="setExp(this)">
         <span class="en">🟠 Principiante</span>
         <span class="ed">Aprendiendo registro. Velocidad baja.</span>
       </button>
       <button class="expb on" data-exp="intermediate" onclick="setExp(this)">
-        <span class="en">🟡 Intermedio</span>
-        <span class="ed">Consistente. Mejora continua.</span>
+        <span class="en">🟡 Intermedio ⭐</span>
+        <span class="ed">Consistente. Mejora continua. <strong style="color:var(--ocean);">Tu nivel actual</strong></span>
       </button>
       <button class="expb" data-exp="experienced" onclick="setExp(this)">
         <span class="en">🟢 Experimentado</span>
@@ -763,13 +783,27 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
 
   <div class="sec">
     <div class="slbl">Margen de ganancia</div>
+    <div class="f" style="margin-bottom:9px;">
+      <label>Margen sobre costos de decoración</label>
+      <select id="marginSelect" onchange="applyMarginSelect()">
+        <option value="30">Competitivo — 30%</option>
+        <option value="40" selected>Estándar — 40% (recomendado)</option>
+        <option value="50">Premium — 50%</option>
+        <option value="custom">Personalizado — ingresar %</option>
+      </select>
+    </div>
+    <div id="marginCustomBox" style="display:none;">
+      <div class="f" style="margin-bottom:9px;">
+        <label>Margen personalizado (%)</label>
+        <input type="number" id="marginCustom" value="40" min="0" max="150" step="1" oninput="document.getElementById('marginSlider').value=this.value;document.getElementById('mDisp').textContent=this.value+'%';calc()">
+      </div>
+    </div>
     <div class="mdisp" id="mDisp">40%</div>
     <div class="msub">Margen sobre costos de decoración (sin markup de camisa)</div>
-    <input type="range" id="marginSlider" min="0" max="150" value="40" step="1"
+    <input type="range" id="marginSlider" min="0" max="150" value="40" step="1" style="display:none;"
       oninput="document.getElementById('mDisp').textContent=this.value+'%';calc()">
-    <div class="sllbs"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%+</span></div>
     <div class="ibox blue" style="font-size:.7rem;margin-top:10px;">
-      💡 Recomendado: 40–50% para covers overhead real, impuestos y sorpresas. Menos de 25% = riesgo.
+      💡 Recomendado: 40–50% para cubrir overhead real, impuestos y sorpresas. Menos de 25% = riesgo.
     </div>
   </div>
 
@@ -868,28 +902,34 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
 
   <div class="sec">
     <div class="slbl">Sales Tax — Jefferson Parish, LA</div>
+    <div class="ibox blue" style="font-size:.7rem;margin-bottom:8px;">
+      💡 <strong>Sales tax está activa por default.</strong> Desactiva solo si el cliente tiene certificado de exención en archivo.
+    </div>
+    <div class="g2" style="margin-bottom:9px;">
+      <div class="f">
+        <label>Tasa de sales tax (%)</label>
+        <input type="number" id="taxRateField" value="9.75" min="0" max="20" step=".01" oninput="calc()">
+        <span class="hint">9.75% = 5% estado + 4.75% Jefferson Parish — actualizada ene 2025. Editable si Jefferson Parish ajusta.</span>
+      </div>
+    </div>
+    <!-- Hidden taxOn checkbox, always mirrors taxExempt logic -->
+    <input type="checkbox" id="taxOn" style="display:none;" onchange="calc()">
+    <!-- Tax exempt toggle -->
     <div class="trow" id="taxRow">
       <div class="tinfo">
-        <strong>Sales Tax — Jefferson Parish (Kenner)</strong>
-        <small id="taxRateLabel">9.75% (5% estado + 4.75% local) — actualizada ene 2025</small>
-      </div>
-      <label class="tog"><input type="checkbox" id="taxOn" onchange="calc()"><span class="tk"></span></label>
-    </div>
-    <!-- Tax exempt toggle — NUEVO -->
-    <div class="trow">
-      <div class="tinfo">
-        <strong>Cliente exento de impuesto</strong>
-        <small>Resale certificate, nonprofit, gobierno. Requiere cert. por escrito.</small>
+        <strong>Cliente exento de impuesto (resale cert on file)</strong>
+        <small>Activa SOLO si el cliente tiene certificado de exención firmado en archivo.</small>
       </div>
       <label class="tog"><input type="checkbox" id="taxExemptOn" onchange="toggleTaxExempt()"><span class="tk"></span></label>
     </div>
     <div id="taxExemptPanel" style="display:none;margin-top:7px;">
-      <div class="ibox green" style="font-size:.7rem;">
-        ✓ Tax-exempt activo. Guarda el certificado R-1064 en archivo (Louisiana DOR). Se mostrará en el quote con nota de exención.
+      <div class="ibox warn" style="font-size:.7rem;">
+        ⚠️ <strong>Louisiana:</strong> Guarda el certificado R-1064 en archivo mínimo 3 años. Nonprofits NO son automáticamente exentos — requieren forma específica.
       </div>
       <div class="f">
-        <label>Número de certificado / Razón</label>
+        <label>Número de certificado</label>
         <input type="text" id="taxExemptCert" placeholder="Ej: R-1064 #12345 / Resale">
+        <span class="hint">Louisiana: guarda el certificado R-1064 en archivo mínimo 3 años.</span>
       </div>
     </div>
   </div>
@@ -950,6 +990,7 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
       <div class="profit-row"><span class="profit-lbl">− Costos directos</span><span class="profit-val" id="pr-direct">—</span></div>
       <div class="profit-row"><span class="profit-lbl">= Ganancia bruta</span><span class="profit-val g" id="pr-gross">—</span></div>
       <div class="profit-row"><span class="profit-lbl">− CC processing (si aplica)</span><span class="profit-val" id="pr-cc">—</span></div>
+      <div class="profit-row" id="pr-tax-row" style="display:none;"><span class="profit-lbl">− Sales tax cobrada (va al estado)</span><span class="profit-val" id="pr-tax">—</span></div>
       <div class="profit-row" style="border-top:1px solid var(--gb);padding-top:4px;margin-top:2px;">
         <span class="profit-lbl" style="color:var(--white);font-weight:600;">≈ Ganancia neta estimada</span>
         <span class="profit-val g" id="pr-net" style="color:var(--green);">—</span>
@@ -1005,7 +1046,7 @@ const DEF_SIZES = {
 };
 const LOC_NAMES = ['Front','Back','Left chest','Right chest','Left sleeve','Right sleeve','Neck tag','Bottom hem','Custom'];
 
-// Ink types: [multiplier, label, baseInkCost override note]
+// Ink types: [multiplier, label]
 const INK_TYPES = [
   [1.0,'Plastisol'],
   [1.6,'Water-based (+60%)'],
@@ -1013,12 +1054,15 @@ const INK_TYPES = [
   [1.6,'Metallic'],
   [2.2,'Glitter (+120%)'],
   [1.8,'Shimmer/Pearl'],
-  [2.0,'Glow-in-dark'],
+  [2.0,'Glow-in-dark (GID)'],
   [2.5,'Reflective (+150%)'],
   [2.5,'High-density 3D'],
   [1.15,'Soft-hand additive'],
-  [2.2,'Puff / Foil'],
+  [2.2,'Puff / Foil (+120%)'],
   [1.4,'Fluorescent/Neon'],
+  [1.6,'Suede (+60%)'],
+  [1.8,'Crackle (+80%)'],
+  [1.5,'Athletic/Nylon (+50%)'],
 ];
 
 // ════ SS&A API — calls go through /api/ssa-* proxy (credentials are server-side) ════
@@ -1190,8 +1234,18 @@ function toggleCSG() {
 function checkUnderbase() {
   const tone = document.getElementById('shirtTone').value;
   const warn = document.getElementById('undbaseWarn');
-  if (tone === 'dark') { warn.style.display='block'; }
-  else { warn.style.display='none'; }
+  const undbaseToggle = document.getElementById('undbaseOn');
+  if (tone === 'dark' || tone === 'black') {
+    warn.style.display = 'block';
+    warn.innerHTML = '⚠️ <strong>Camisa oscura detectada — underbase agregado automáticamente (+1 pantalla, +flash, velocidad -30%)</strong>';
+    undbaseToggle.checked = true;
+  } else if (tone === 'medium') {
+    warn.style.display = 'block';
+    warn.innerHTML = '💡 Tono medio detectado — <strong>¿Agregar underbase para mayor opacidad?</strong> &nbsp;<button onclick="document.getElementById(\'undbaseOn\').checked=true;document.getElementById(\'undbaseWarn\').style.display=\'none\';calc();" style="background:var(--ocean);border:none;color:var(--bg);padding:3px 10px;border-radius:2px;font-family:\'Barlow Condensed\',sans-serif;font-weight:700;cursor:pointer;font-size:.75rem;">Sí</button> &nbsp;<button onclick="document.getElementById(\'undbaseOn\').checked=false;document.getElementById(\'undbaseWarn\').style.display=\'none\';calc();" style="background:var(--gd);border:1px solid var(--gb);color:var(--muted);padding:3px 10px;border-radius:2px;font-family:\'Barlow Condensed\',sans-serif;font-weight:700;cursor:pointer;font-size:.75rem;">No</button>';
+  } else {
+    warn.style.display = 'none';
+    undbaseToggle.checked = false;
+  }
   calc();
 }
 
@@ -1264,11 +1318,42 @@ function togglePMS() {
 function toggleTaxExempt() {
   const on = gch('taxExemptOn');
   document.getElementById('taxExemptPanel').style.display = on ? 'block' : 'none';
-  if (on) {
-    document.getElementById('taxOn').checked = false;
-    document.getElementById('taxRow').style.opacity = '0.5';
+  // When exempt is ON, tax is OFF; when exempt is OFF, tax is ON (default behavior)
+  document.getElementById('taxOn').checked = !on;
+  document.getElementById('taxRow').style.opacity = '1';
+  calc();
+}
+
+// ════ DELIVERY METHOD ════
+function applyDeliveryMethod() {
+  const v = document.getElementById('deliveryMethod').value;
+  const feeInput = document.getElementById('shipFee');
+  const hint = document.getElementById('shipFeeHint');
+  if (v === 'pickup') {
+    feeInput.value = '0';
+    if (hint) hint.textContent = 'Sin cargo — cliente recoge en el shop.';
+  } else if (v === 'local') {
+    if (parseFloat(feeInput.value) < 15) feeInput.value = '25';
+    if (hint) hint.textContent = 'Delivery local: $15–50. Ajusta según distancia.';
   } else {
-    document.getElementById('taxRow').style.opacity = '1';
+    if (hint) hint.textContent = 'Ingresa el costo del carrier (UPS, FedEx, USPS).';
+  }
+  calc();
+}
+
+// ════ MARGIN DROPDOWN ════
+function applyMarginSelect() {
+  const sel = document.getElementById('marginSelect').value;
+  const customBox = document.getElementById('marginCustomBox');
+  if (sel === 'custom') {
+    customBox.style.display = 'block';
+    const cv = parseInt(document.getElementById('marginCustom').value) || 40;
+    document.getElementById('marginSlider').value = cv;
+    document.getElementById('mDisp').textContent = cv + '%';
+  } else {
+    customBox.style.display = 'none';
+    document.getElementById('marginSlider').value = sel;
+    document.getElementById('mDisp').textContent = sel + '%';
   }
   calc();
 }
@@ -1369,10 +1454,12 @@ function calcAdjustedSpeed(baseSpeed, totalColors, hasFlash, hasUnderbase) {
 
 // ════ GARMENT TYPE MODIFIERS ════
 const GARMENT_MOD = {
-  tshirt:    {speedFactor:1.00, laborAdd:0.00},
-  longsleeve:{speedFactor:0.85, laborAdd:0.50},
-  hoodie:    {speedFactor:0.65, laborAdd:1.50},
-  crewneck:  {speedFactor:0.70, laborAdd:1.25},
+  tshirt:    {speedFactor:1.00, laborAdd:0.00, markupDefault:1.7},
+  longsleeve:{speedFactor:0.85, laborAdd:0.50, markupDefault:1.7},
+  hoodie:    {speedFactor:0.65, laborAdd:1.50, markupDefault:1.8},
+  crewneck:  {speedFactor:0.70, laborAdd:1.25, markupDefault:1.8},
+  polo:      {speedFactor:0.80, laborAdd:0.50, markupDefault:1.8},
+  heavy:     {speedFactor:0.50, laborAdd:2.50, markupDefault:1.9},
 };
 
 // ════ MAIN CALC ════
@@ -1418,9 +1505,19 @@ function calc() {
   }
 
   // ── Spoilage ──
-  const prodNeeded = Math.ceil(qty/(1-spoilRate));
+  const prodNeeded = Math.ceil(qty/(1-effectiveSpoilRate));
   const extraShirts = (prodNeeded - qty) + testShirts;
   const buyTotal = qty + extraShirts;
+
+  // Show discharge alert if discharge ink used
+  const dischargeWarnEl = document.getElementById('dischargeWarn');
+  if (dischargeWarnEl) {
+    const hasDischargeInk = locs.some(l => {
+      const lbl = INK_TYPES.find(([v])=>l.inkMult==v)?.[1]||'';
+      return lbl.includes('Discharge');
+    });
+    dischargeWarnEl.style.display = hasDischargeInk ? 'block' : 'none';
+  }
 
   document.getElementById('af-waste').textContent = '+'+Math.round(inkWaste*100)+'%';
   document.getElementById('af-spoil').textContent = Math.round(spoilRate*100)+'%';
@@ -1430,6 +1527,8 @@ function calc() {
 
   // ── Screen cost ──
   const halftoneOn = gch('halftoneOn');
+  // Halftone: also +15% on run labor
+  const halftoneRunLaborMult = halftoneOn ? 1.15 : 1.0;
   const sc_em=gv('sc_em'), sc_film=gv('sc_film'), sc_burn=gv('sc_burn'), sc_rec=gv('sc_rec'), sc_fr=gv('sc_fr'), sc_labor=gv('sc_labor');
   const scPerBase = sc_em+sc_film+sc_burn+sc_rec+sc_fr+sc_labor;
   const scPerInternal = scPerBase + (halftoneOn ? 3.0 : 0); // +$3 for halftones
@@ -1450,7 +1549,7 @@ function calc() {
   const repeat = gch('repeatOn');
   const screenFeeClient = repeat ? gv('screenFeeReorder') : gv('screenFeeClient');
   const screensClientRevenue = totalColors * screenFeeClient; // What we CHARGE
-  const screensCostInternal = repeat ? 0 : (totalColors * scPerInternal); // What it COSTS us
+  const screensCostInternal = repeat ? 0 : (totalColors * scPerInternal + wbScreenAdd); // What it COSTS us
 
   const artFee = (repeat || !gch('artOn')) ? 0 : gv('artFee');
   const halftoneArtAdd = (halftoneOn && !repeat) ? 30 : 0;
@@ -1466,11 +1565,29 @@ function calc() {
   const minOrder = gv('minOrder');
   const smallFee = (qty < minOrder) ? gv('smallOrderFee') : 0;
 
+  // ── Water-based / Discharge detection ──
+  const hasWaterBased = locs.some(l => l.inkMult === 1.6 && l.inkMult !== 1.0);
+  const hasDischarge = locs.some(l => l.inkMult === 1.8 && String(INK_TYPES.find(([v])=>l.inkMult==v)?.[1]||'').includes('Discharge'));
+  const hasWBorDischarge = locs.some(l => {
+    const lbl = INK_TYPES.find(([v])=>l.inkMult==v)?.[1]||'';
+    return lbl.includes('Water-based') || lbl.includes('Discharge');
+  });
+  // WB warning box
+  const wbWarnBox = document.getElementById('wbWarnBox');
+  if (wbWarnBox) wbWarnBox.style.display = hasWBorDischarge ? 'block' : 'none';
+
+  // Adjust speed for WB
+  let wbSpeedFactor = hasWBorDischarge ? 0.70 : 1.0;
+  // Adjust spoil rate for WB
+  let effectiveSpoilRate = hasWBorDischarge ? Math.max(spoilRate, 0.075) : spoilRate;
+  // Extra screen cost for WB locations
+  const wbScreenAdd = hasWBorDischarge ? (locs.filter(l=>{const lb=INK_TYPES.find(([v])=>l.inkMult==v)?.[1]||'';return lb.includes('Water-based')||lb.includes('Discharge');}).length * 2.0) : 0;
+
   // ── Adjusted speed ──
   const hasFlash = gch('flashOn') || totalColors >= 2;
   if (totalColors >= 2 && !gch('flashOn')) document.getElementById('flashOn').checked = true;
   const baseSpeed = Math.max(1, gv('pressSpeed') || EXP[expLevel].speed);
-  const adjSpeed = calcAdjustedSpeed(baseSpeed * gMod.speedFactor, totalColors, hasFlash, undbaseOn);
+  const adjSpeed = calcAdjustedSpeed(baseSpeed * gMod.speedFactor * wbSpeedFactor, totalColors, hasFlash, undbaseOn);
   document.getElementById('af-speed-adj').textContent = adjSpeed+' pzas/hr ('+totalColors+' colors'+( (hasFlash||undbaseOn)?', flash':'')+')'+(garmentType!=='tshirt'?' + '+garmentType:'');
 
   // ── Setup time & breakdown ──
@@ -1489,7 +1606,7 @@ function calc() {
   const laborRealPerHr = gv('laborRate') * laborBurden;
   const setupLaborCost = (setupMinutes/60) * laborRealPerHr;
   const breakdownLaborCost = (breakdownTime/60) * laborRealPerHr;
-  const runLaborPerPiece = laborRealPerHr / adjSpeed;
+  const runLaborPerPiece = (laborRealPerHr / adjSpeed) * halftoneRunLaborMult;
 
   // ── Ink per piece (adjusted for underbase extra tinta) ──
   const inkSqIn = gv('inkSqIn');
@@ -1544,8 +1661,9 @@ function calc() {
   const rushSurchargePerPiece = preTaxPerPiece * turnaroundRate;
   const preTaxWithRush = preTaxPerPiece + rushSurchargePerPiece;
 
-  // Tax
-  const taxRate = (gch('taxOn') && !gch('taxExemptOn')) ? 0.0975 : 0; // 9.75% updated 2026
+  // Tax - use editable rate field, default 9.75%
+  const taxRatePct = (document.getElementById('taxRateField') ? (parseFloat(document.getElementById('taxRateField').value)||9.75) : 9.75) / 100;
+  const taxRate = (gch('taxOn') && !gch('taxExemptOn')) ? taxRatePct : 0;
   const taxPerPiece = preTaxWithRush * taxRate;
 
   // CC fee
@@ -1572,13 +1690,20 @@ function calc() {
   document.getElementById('r-final').textContent = fmt(pricePerPiece);
 
   // Profit analysis
+  const taxTotal = taxPerPiece * qty;
   document.getElementById('pr-revenue').textContent = fmtK(totalJob);
   const directCosts = (blendedWholesale + csgSur + fixedPerUnit + prodVarPerPiece) * qty;
   document.getElementById('pr-direct').textContent = fmtK(directCosts);
   document.getElementById('pr-gross').textContent = fmtK(grossProfit);
   const ccTotal = ccFeePerPiece * qty;
   document.getElementById('pr-cc').textContent = gch('ccFeeOn') ? '-'+fmt(ccTotal) : '$0.00';
-  document.getElementById('pr-net').textContent = fmtK(netProfit);
+  // Tax collected goes to the state — subtract from net profit
+  const netProfitReal = netProfit - taxTotal;
+  document.getElementById('pr-net').textContent = fmtK(netProfitReal);
+  if (document.getElementById('pr-tax')) {
+    document.getElementById('pr-tax').textContent = taxTotal > 0 ? '-'+fmt(taxTotal) : '$0.00';
+    document.getElementById('pr-tax-row').style.display = taxTotal > 0 ? 'flex' : 'none';
+  }
 
   // Deposit
   if (gch('depositOn')) {
@@ -1678,7 +1803,8 @@ function renderTiers(blendedWholesale, blendedRetail, garmentMarkup, csg, csgSur
   const marginPct = gv('marginSlider')/100;
   const laborRealPerHr = gv('laborRate') * (gv('laborBurden')||1.25);
   const overheadPct = gv('overhead')/100;
-  const taxRate = (gch('taxOn') && !gch('taxExemptOn')) ? 0.0975 : 0;
+  const taxRatePct2 = (document.getElementById('taxRateField') ? (parseFloat(document.getElementById('taxRateField').value)||9.75) : 9.75) / 100;
+  const taxRate = (gch('taxOn') && !gch('taxExemptOn')) ? taxRatePct2 : 0;
   const ccFeeRate = gch('ccFeeOn') ? 0.029 : 0;
   const net30Rate = gch('net30On') ? 0.025 : 0;
 
@@ -1759,7 +1885,7 @@ function buildQuoteText() {
   t += `\n`;
   t += `Cantidad: ${qty} piezas\n`;
   t += `Tipo de prenda: ${gs('garmentType')}\n`;
-  if (csg) t += `⚠ NOTA: Cliente suministra sus propias prendas — waiver firmado requerido.\n`;
+  if (csg) t += `⚠ NOTA CSG: Shop no es responsable por misprints, daños, scorching ni errores en prendas del cliente. Cliente verificó que las prendas son aptas para screen printing (algodón adecuado, sin moisture-wicking, sin prints previos en área de impresión). Cliente proveyó 10% extra de prendas. Prendas deben ser nuevas y sin lavar. Sin reembolso de costos de decoración si el daño es por defecto de la prenda. WAIVER FIRMADO REQUERIDO ANTES DE PRODUCIR.\n`;
   if (repeat) t += `Tipo: Reorden (pantallas en archivo, &lt;12 meses)\n`;
   t += `Turnaround: ${tnLabel}\n`;
   if (!csg) t += `Prendas extra a comprar (spoilage + tests): ${extra}\n`;
@@ -1787,7 +1913,7 @@ function buildQuoteText() {
   t += `\n${'-'.repeat(40)}\n`;
   if (mText) t += `Política de misprints:\n${mText}\n\n`;
   t += `\nNOTAS IMPORTANTES:\n`;
-  t += `- Colores Pantone (PMS) se aproximan con ±5% tolerancia. Pantalla física puede variar.\n`;
+  t += `- Colores Pantone (PMS) se aproximan con ±5% tolerancia Delta-E. La pantalla física puede variar. Aprobación de strike-off recomendada para PMS crítico.\n`;
   t += `- 2% misprints tolerados en screen printing. Defectos adicionales se reimprimen sin costo.\n`;
   t += `- Aprobación de arte/mockup requerida antes de producción. Cambios después = $25 + retraso.\n`;
   t += `\nOVPL — Kenner, Louisiana\n${qn}\n`;
@@ -1837,7 +1963,10 @@ function doCopy(taId,btnId) {
 
 // ════ INIT ════
 document.getElementById('flashOn').checked = true;
+document.getElementById('taxOn').checked = true; // Sales tax ON por default
 document.getElementById('undbaseOn').addEventListener('change', calc);
+// Ensure tax starts on
+if (!gch('taxExemptOn')) document.getElementById('taxOn').checked = true;
 initQuoteNum();
 initExpiry();
 renderLocs();
