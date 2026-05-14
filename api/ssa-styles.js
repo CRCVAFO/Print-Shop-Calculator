@@ -1,4 +1,4 @@
-// api/ssa-styles.js — Smart search with brand+style filtering
+// api/ssa-styles.js — Smart search with verified styleID shortcuts
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -16,57 +16,62 @@ export default async function handler(req, res) {
   const IMG_BASE = 'https://www.ssactivewear.com/';
   const fields = 'styleID,brandName,styleName,title,baseCategory,styleImage';
 
-  // Popular style shortcuts — direct styleID lookup bypasses bad search
+  // Verified styleIDs from SS&A account 1001550
   const SHORTCUTS = {
-    'g500': 16, '5000': 16, 'gildan 5000': 16, 'heavy cotton': 16,
-    'g64000': 32, '64000': 32, 'softstyle': 32, 'gildan 64000': 32,
-    'g18500': 395, '18500': 395, 'heavy blend hoodie': 395, 'gildan hoodie': 395,
-    'g18000': 372, '18000': 372, 'heavy blend crew': 372,
-    '3001': null, 'bella': null, 'bella canvas': null, 'bc3001': null,
-    '1717': null, 'comfort colors': null, 'cc1717': null,
-    '3600': null, 'next level': null, 'nl3600': null,
-    'hanes': null, '5180': null,
+    // Gildan
+    'g500':16, '5000':16, 'gildan 5000':16, 'heavy cotton':16,
+    'g64000':32, '64000':32, 'softstyle':32, 'gildan 64000':32, 'gildan softstyle':32,
+    'g18500':395, '18500':395, 'gildan hoodie':395, 'heavy blend hoodie':395,
+    'g18000':372, '18000':372, 'gildan crewneck':372, 'heavy blend crew':372,
+    // Bella+Canvas
+    '3001':29, 'bella':29, 'bella canvas':29, 'bella+canvas':29, 'bc3001':29, 'bella 3001':29,
+    // Comfort Colors
+    '1717':1822, 'comfort colors':1822, 'cc1717':1822, 'comfort colors 1717':1822,
+    // Next Level
+    '3600':3214, 'next level':3214, 'next level 3600':3214, 'nl3600':3214,
+    // Hanes
+    '5180':55, 'hanes':55, 'beefy':55, 'hanes 5180':55,
   };
 
   const qLower = q.toLowerCase().trim();
-  const shortcutID = SHORTCUTS[qLower];
 
   try {
-    let results = [];
+    let priorityResults = [];
 
-    // If we have a direct styleID shortcut, use it
+    // Check for shortcut match
+    const shortcutID = SHORTCUTS[qLower];
     if (shortcutID) {
       const r = await fetch(
         `https://api.ssactivewear.com/v2/styles/?styleID=${shortcutID}&fields=${fields}&mediatype=json`,
         { headers: { 'Authorization': `Basic ${credentials}`, 'Accept': 'application/json' } }
       );
-      const data = r.ok ? await r.json() : [];
-      results = Array.isArray(data) ? data : [];
+      if (r.ok) {
+        const data = await r.json();
+        priorityResults = Array.isArray(data) ? data : [];
+      }
     }
 
-    // Always also do a title search and filter client-side
+    // Also search by styleName (exact number like "3001", "5000")
     const [r1, r2] = await Promise.all([
-      fetch(`https://api.ssactivewear.com/v2/styles/?title=${encodeURIComponent(q)}&fields=${fields}&mediatype=json`,
-        { headers: { 'Authorization': `Basic ${credentials}`, 'Accept': 'application/json' } }),
       fetch(`https://api.ssactivewear.com/v2/styles/?styleName=${encodeURIComponent(q)}&fields=${fields}&mediatype=json`,
+        { headers: { 'Authorization': `Basic ${credentials}`, 'Accept': 'application/json' } }),
+      fetch(`https://api.ssactivewear.com/v2/styles/?title=${encodeURIComponent(q)}&fields=${fields}&mediatype=json`,
         { headers: { 'Authorization': `Basic ${credentials}`, 'Accept': 'application/json' } }),
     ]);
 
     const [d1, d2] = await Promise.all([r1.ok ? r1.json() : [], r2.ok ? r2.json() : []]);
-    const allData = [...results, ...(Array.isArray(d1)?d1:[]), ...(Array.isArray(d2)?d2:[])];
+    const allRaw = [...priorityResults, ...(Array.isArray(d1)?d1:[]), ...(Array.isArray(d2)?d2:[])];
 
-    // Filter: only return items where brandName OR styleName OR title actually matches query
-    const qWords = qLower.split(/\s+/).filter(w => w.length > 1);
-    const filtered = allData.filter(s => {
+    // Filter: results must actually match query words
+    const qWords = qLower.split(/\s+/).filter(w => w.length >= 2);
+    const filtered = allRaw.filter(s => {
       const brand = (s.brandName || '').toLowerCase();
       const style = (s.styleName || '').toLowerCase();
       const title = (s.title || '').toLowerCase();
-      return qWords.some(w =>
-        brand.includes(w) || style.includes(w) || title.includes(w)
-      );
+      return qWords.some(w => brand.includes(w) || style.includes(w) || title.includes(w));
     });
 
-    // Deduplicate
+    // Deduplicate, priorityResults first
     const seen = new Set();
     const unique = filtered.filter(s => {
       if (seen.has(s.styleID)) return false;
