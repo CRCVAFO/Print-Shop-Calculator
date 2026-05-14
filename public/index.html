@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OVPL v5 — Screenprint Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800;900&family=Barlow:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg:#081116;--bg2:#0c1820;--bg3:#112030;--bg4:#0f1e2c;
+  --ocean:#508FFF;--od:rgba(80,143,255,0.13);--ob:rgba(80,143,255,0.28);
+  --gray:#DCDDDD;--gd:rgba(220,221,221,0.06);--gb:rgba(220,221,221,0.11);
+  --white:#fff;--muted:rgba(220,221,221,0.42);
+  --green:#22d68a;--warn:#f5a623;--danger:#ff5c5c;--purple:#a78bfa;
+}
+body{background:var(--bg);color:var(--white);font-family:'Barlow',sans-serif;font-size:14px;min-height:100vh;}
+.hdr{display:flex;align-items:center;justify-content:space-between;padding:.85rem 1.75rem;border-bottom:1px solid var(--gb);background:var(--bg);position:sticky;top:0;z-index:300;gap:12px;}
+.logo{font-family:'Barlow Condensed',sans-serif;font-weight:900;font-size:1.7rem;letter-spacing:-.02em;flex-shrink:0;}
+.logo em{color:var(--ocean);font-style:normal;}
+.hdr-mid{display:flex;align-items:center;gap:10px;flex:1;justify-content:center;}
+.qnum{font-family:'Barlow Condensed',sans-serif;font-size:.9rem;font-weight:700;color:var(--ocean);background:var(--od);border:1px solid var(--ob);padding:4px 12px;border-radius:3px;letter-spacing:.05em;white-space:nowrap;}
+.ci{background:transparent;border:none;border-bottom:1px solid var(--gb);color:var(--gray);font-family:'Barlow',sans-serif;font-size:.82rem;padding:4px 8px;width:200px;outline:none;}
+.ci:focus{border-color:var(--ocean);}
+.ci::placeholder{color:var(--muted);}
+.pill{font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);border:1px solid var(--gb);padding:3px 9px;border-radius:2px;flex-shrink:0;}
+.app{display:grid;grid-template-columns:1fr 360px;min-height:calc(100vh - 54px);}
+.left{border-right:1px solid var(--gb);}
+.right{background:var(--bg2);position:sticky;top:54px;height:calc(100vh - 54px);overflow-y:auto;display:flex;flex-direction:column;}
+.tabs{display:flex;border-bottom:1px solid var(--gb);background:var(--bg);position:sticky;top:0;z-index:100;}
+.tb{flex:1;padding:10px 3px;font-family:'Barlow Condensed',sans-serif;font-size:.62rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all .18s;}
+.tb:hover{color:var(--gray);}
+.tb.on{color:var(--ocean);border-bottom-color:var(--ocean);}
+.panel{display:none;padding:1.5rem 1.75rem;}
+.panel.on{display:block;}
+.sec{margin-bottom:1.75rem;}
+.slbl{font-family:'Barlow Condensed',sans-serif;font-size:.58rem;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:var(--ocean);margin-bottom:.8rem;display:flex;align-items:center;gap:7px;}
+.slbl::after{content:'';flex:1;height:1px;background:var(--ob);}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:9px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:9px;margin-bottom:9px;}
+.g4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:9px;margin-bottom:9px;}
+.f{display:flex;flex-direction:column;gap:5px;}
+label{font-size:.62rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);}
+input[type=number],input[type=text],input[type=date],select,textarea{background:var(--gd);border:1px solid var(--gb);color:var(--white);font-family:'Barlow',sans-serif;font-size:.88rem;font-weight:500;padding:8px 11px;border-radius:3px;width:100%;transition:border-color .15s;-webkit-appearance:none;appearance:none;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--ocean);background:var(--od);}
+select option{background:#1a2a38;}
+textarea{resize:vertical;min-height:60px;line-height:1.5;}
+.hint{font-size:.62rem;color:var(--muted);line-height:1.45;}
+.hint.ok{color:var(--green);}
+.hint.warn{color:var(--warn);}
+.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:11px;}
+.pb{background:var(--gd);border:1px solid var(--gb);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:.75rem;font-weight:700;padding:8px 5px;border-radius:3px;cursor:pointer;text-align:center;transition:all .18s;line-height:1.3;}
+.pb:hover{border-color:var(--ocean);color:var(--ocean);}
+.pb.on{background:var(--od);border-color:var(--ocean);color:var(--ocean);}
+.pb small{font-size:.58rem;font-weight:400;opacity:.7;display:block;}
+.trow{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--gd);border:1px solid var(--gb);border-radius:3px;margin-bottom:7px;}
+.trow.active{background:var(--od);border-color:var(--ob);}
+.tinfo strong{font-size:.85rem;font-weight:500;display:block;}
+.tinfo small{font-size:.64rem;color:var(--muted);}
+.tog{position:relative;width:37px;height:20px;flex-shrink:0;}
+.tog input{opacity:0;width:0;height:0;}
+.tk{position:absolute;inset:0;background:var(--gb);border-radius:10px;cursor:pointer;transition:background .18s;}
+.tog input:checked+.tk{background:var(--ocean);}
+.tk::after{content:'';position:absolute;left:3px;top:3px;width:14px;height:14px;border-radius:50%;background:#fff;transition:transform .18s;}
+.tog input:checked+.tk::after{transform:translateX(17px);}
+.ibox{border-radius:3px;padding:10px 13px;margin-bottom:9px;font-size:.76rem;line-height:1.55;}
+.ibox.blue{background:var(--od);border:1px solid var(--ob);color:var(--ocean);}
+.ibox.green{background:rgba(34,214,138,.08);border:1px solid rgba(34,214,138,.2);color:var(--green);}
+.ibox.warn{background:rgba(245,166,35,.09);border:1px solid rgba(245,166,35,.25);color:var(--warn);}
+.ibox.purple{background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);color:var(--purple);}
+.ibox.danger{background:rgba(255,92,92,.09);border:1px solid rgba(255,92,92,.25);color:var(--danger);}
+/* SS&A */
+.ssabox{background:var(--bg3);border:1px solid var(--gb);border-radius:3px;padding:10px 13px;margin-bottom:10px;}
+.ssa-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;}
+.ssatxt strong{font-size:.85rem;font-weight:500;display:block;}
+.ssatxt small{font-size:.64rem;color:var(--muted);}
+.ssalink{font-family:'Barlow Condensed',sans-serif;font-size:.78rem;font-weight:700;color:var(--ocean);text-decoration:none;border:1px solid var(--ob);padding:5px 10px;border-radius:3px;white-space:nowrap;transition:background .15s;}
+.ssalink:hover{background:var(--od);}
+.ssa-api{display:flex;gap:6px;align-items:center;}
+.ssa-api input{font-size:.78rem;padding:6px 10px;}
+.ssa-api button{flex-shrink:0;font-family:'Barlow Condensed',sans-serif;font-size:.75rem;font-weight:700;padding:7px 12px;background:var(--ocean);border:none;color:var(--bg);border-radius:3px;cursor:pointer;white-space:nowrap;transition:background .15s;}
+.ssa-api button:hover{background:#6fa8ff;}
+.ssa-status{font-size:.62rem;margin-top:5px;}
+.ssa-status.ok{color:var(--green);}
+.ssa-status.err{color:var(--danger);}
+.ssa-status.loading{color:var(--ocean);}
+/* Product search */
+.prod-search{display:flex;gap:6px;margin-bottom:8px;}
+.prod-search input{font-size:.82rem;}
+.prod-search button{flex-shrink:0;font-family:'Barlow Condensed',sans-serif;font-size:.75rem;font-weight:700;padding:7px 12px;background:var(--gd);border:1px solid var(--gb);color:var(--ocean);border-radius:3px;cursor:pointer;transition:all .15s;}
+.prod-search button:hover{background:var(--od);border-color:var(--ob);}
+.prod-results{max-height:220px;overflow-y:auto;border:1px solid var(--gb);border-radius:3px;margin-bottom:8px;}
+.prod-item{padding:8px 10px;border-bottom:1px solid var(--gb);cursor:pointer;transition:background .15s;}
+.prod-item:last-child{border-bottom:none;}
+.prod-item:hover{background:var(--od);}
+.prod-name{font-size:.8rem;font-weight:600;color:var(--white);}
+.prod-meta{font-size:.64rem;color:var(--muted);margin-top:1px;}
+.prod-price{font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:700;color:var(--green);}
+/* Location cards */
+.loc-cards{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;}
+.lcard{background:var(--bg4);border:1px solid var(--gb);border-radius:5px;overflow:hidden;}
+.lcard-h{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:var(--bg3);border-bottom:1px solid var(--gb);}
+.lcard-n{font-size:.62rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.lcard-a{font-family:'Barlow Condensed',sans-serif;font-size:.75rem;font-weight:700;color:var(--ocean);}
+.lcard-x{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.95rem;padding:2px 5px;transition:color .15s;}
+.lcard-x:hover{color:var(--danger);}
+.lcard-b{padding:10px 12px;}
+.lgrid{display:grid;grid-template-columns:1.6fr .8fr 1.3fr;gap:8px;align-items:end;}
+.lsrow{display:flex;align-items:center;gap:5px;margin-top:7px;}
+.lslbl{font-size:.62rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);white-space:nowrap;}
+.lx{color:var(--muted);font-size:.8rem;}
+.sbadge{display:inline-flex;align-items:center;gap:5px;background:var(--od);border:1px solid var(--ob);border-radius:2px;padding:3px 8px;font-size:.67rem;font-family:'Barlow Condensed',sans-serif;font-weight:600;color:var(--ocean);margin-top:6px;}
+.sps{display:flex;gap:5px;flex-wrap:wrap;margin-top:5px;}
+.sp{font-size:.62rem;padding:3px 7px;border:1px solid var(--gb);background:var(--gd);color:var(--muted);border-radius:2px;cursor:pointer;font-family:'Barlow Condensed',sans-serif;font-weight:600;transition:all .15s;}
+.sp:hover{border-color:var(--ocean);color:var(--ocean);}
+.add-loc{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;padding:10px;background:transparent;border:1px dashed var(--gb);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-radius:3px;cursor:pointer;transition:all .18s;}
+.add-loc:hover{border-color:var(--ocean);color:var(--ocean);}
+/* Screen */
+.scbox{background:var(--bg3);border:1px solid var(--gb);border-radius:3px;padding:11px 13px;margin-bottom:9px;}
+.scbox-t{font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:9px;}
+.scrow{display:flex;align-items:center;gap:8px;margin-bottom:7px;}
+.scrow:last-child{margin-bottom:0;}
+.sclbl{font-size:.72rem;color:var(--muted);flex:1;}
+.sci{width:76px!important;flex-shrink:0;}
+.sctotal{display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid var(--gb);font-size:.8rem;font-weight:600;margin-top:4px;}
+/* Experience */
+.expg{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:12px;}
+.expb{padding:11px 7px;border:1px solid var(--gb);background:var(--gd);border-radius:3px;cursor:pointer;text-align:center;transition:all .18s;}
+.expb:hover{border-color:var(--ocean);}
+.expb.on{border-color:var(--ocean);background:var(--od);}
+.en{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.92rem;display:block;margin-bottom:3px;}
+.ed{font-size:.62rem;color:var(--muted);line-height:1.4;}
+.expb.on .en{color:var(--ocean);}
+/* Auto box */
+.abox{background:var(--bg3);border:1px solid var(--ob);border-radius:3px;padding:11px 13px;margin-bottom:12px;}
+.abox-t{font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ocean);margin-bottom:9px;}
+.arow{display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid rgba(80,143,255,.09);font-size:.77rem;}
+.arow:last-child{border-bottom:none;}
+.al{color:var(--muted);}
+.av{font-weight:600;}
+.av.w{color:var(--warn);}
+.av.g{color:var(--green);}
+/* Margin slider */
+.mdisp{font-family:'Barlow Condensed',sans-serif;font-size:2.8rem;font-weight:900;color:var(--ocean);text-align:center;line-height:1;}
+.msub{font-size:.65rem;color:var(--muted);text-align:center;margin-bottom:10px;}
+input[type=range]{width:100%;height:4px;-webkit-appearance:none;background:var(--gb);border-radius:2px;outline:none;cursor:pointer;}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:var(--ocean);border:3px solid var(--bg);box-shadow:0 0 0 1px var(--ocean);cursor:pointer;transition:transform .15s;}
+input[type=range]::-webkit-slider-thumb:hover{transform:scale(1.2);}
+.sllbs{display:flex;justify-content:space-between;font-size:.6rem;color:var(--muted);margin-top:5px;}
+/* Size mix */
+.sizemix{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-bottom:5px;}
+.szf{display:flex;flex-direction:column;gap:4px;align-items:center;}
+.szf label{font-size:.55rem;}
+.szf input{text-align:center;padding:6px 2px!important;font-size:.78rem!important;}
+/* Turnaround tags */
+.tntags{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:9px;}
+.tntag{padding:10px 6px;border:1px solid var(--gb);background:var(--gd);border-radius:3px;cursor:pointer;text-align:center;transition:all .18s;}
+.tntag:hover{border-color:var(--ocean);}
+.tntag.on{border-color:var(--ocean);background:var(--od);}
+.tn-name{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:.92rem;display:block;margin-bottom:2px;}
+.tn-days{font-size:.62rem;color:var(--muted);display:block;margin-bottom:2px;}
+.tn-sur{font-size:.68rem;font-weight:600;}
+.tntag.on .tn-name{color:var(--ocean);}
+/* Right panel */
+.qwrap{padding:1.25rem;flex:1;display:flex;flex-direction:column;gap:.75rem;}
+.qh{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--gray);border-bottom:1px solid var(--gb);padding-bottom:.65rem;display:flex;justify-content:space-between;align-items:center;}
+.qh-num{font-size:.7rem;font-weight:600;color:var(--ocean);}
+.phero{text-align:center;padding:.6rem 0;}
+.phlbl{font-size:.58rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.phval{font-family:'Barlow Condensed',sans-serif;font-size:3rem;font-weight:900;line-height:1;}
+.phsub{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;color:var(--ocean);font-weight:600;margin-top:3px;}
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+.sc{background:var(--gd);border:1px solid var(--gb);border-radius:3px;padding:8px 10px;}
+.sl{font-size:.58rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.sv{font-family:'Barlow Condensed',sans-serif;font-size:1.2rem;font-weight:700;}
+.sv.b{color:var(--ocean);}
+.sv.g{color:var(--green);}
+.sv.w{color:var(--warn);}
+.bkt{font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
+.bkr{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--gb);font-size:.76rem;}
+.bkr:last-child{border-bottom:none;}
+.bkl{color:var(--muted);}
+.bkv{font-weight:600;font-variant-numeric:tabular-nums;}
+.bkv.g{color:var(--green);}
+.bkv.w{color:var(--warn);}
+.bkv.b{color:var(--ocean);}
+.bkv.s{color:var(--purple);}
+.bksum{display:flex;justify-content:space-between;align-items:center;padding:9px 11px;background:var(--od);border:1px solid var(--ob);border-radius:3px;margin-top:6px;font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:700;color:var(--ocean);}
+.alert{border-radius:3px;padding:8px 11px;font-size:.74rem;line-height:1.5;margin-bottom:5px;}
+.alert.w{background:rgba(245,166,35,.1);border:1px solid rgba(245,166,35,.28);color:var(--warn);}
+.alert.d{background:rgba(255,92,92,.1);border:1px solid rgba(255,92,92,.28);color:var(--danger);}
+.tier{display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid var(--gb);font-size:.77rem;}
+.tq{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:.9rem;width:52px;color:var(--gray);}
+.tbw{flex:1;height:3px;background:var(--gb);border-radius:2px;overflow:hidden;}
+.tbar{height:100%;background:var(--ocean);border-radius:2px;transition:width .35s ease;}
+.tp{width:58px;text-align:right;font-weight:600;font-variant-numeric:tabular-nums;}
+.ton{color:var(--ocean);}
+.acts{padding:.9rem 1.25rem;border-top:1px solid var(--gb);display:flex;flex-direction:column;gap:6px;}
+.abtn{width:100%;padding:10px;font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-radius:3px;cursor:pointer;border:none;transition:all .18s;}
+.ap{background:var(--ocean);color:var(--bg);}
+.ap:hover{background:#6fa8ff;}
+.as{background:transparent;color:var(--ocean);border:1px solid var(--ob);}
+.as:hover{background:var(--od);}
+/* Modal */
+.movl{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:1000;display:flex;align-items:center;justify-content:center;padding:1rem;}
+.modal{background:var(--bg2);border:1px solid var(--gb);border-radius:6px;width:100%;max-width:520px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;}
+.mhd{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--gb);}
+.mtitle{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-size:1.1rem;letter-spacing:.05em;text-transform:uppercase;}
+.mclose{background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:2px 6px;border-radius:3px;}
+.mclose:hover{color:var(--white);}
+.mbody{padding:1.25rem;overflow-y:auto;flex:1;}
+.mfoot{padding:.9rem 1.25rem;border-top:1px solid var(--gb);display:flex;gap:8px;}
+.qta{width:100%;background:var(--bg);border:1px solid var(--gb);color:var(--gray);font-family:monospace;font-size:.78rem;line-height:1.6;padding:10px;border-radius:3px;resize:none;height:260px;outline:none;}
+.mabtn{flex:1;padding:10px;font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-radius:3px;cursor:pointer;border:none;transition:all .18s;}
+kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2px 6px;font-family:monospace;font-size:.78rem;}
+@media(max-width:860px){.app{grid-template-columns:1fr;}.right{position:static;height:auto;}}
+/* Profit breakdown */
+.profit-box{background:var(--bg3);border:1px solid var(--gb);border-radius:3px;padding:10px 13px;margin-top:6px;}
+.profit-row{display:flex;justify-content:space-between;font-size:.74rem;padding:3px 0;}
+.profit-lbl{color:var(--muted);}
+.profit-val{font-weight:600;font-variant-numeric:tabular-nums;}
+.time-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(34,214,138,.08);border:1px solid rgba(34,214,138,.2);border-radius:2px;padding:4px 10px;font-size:.68rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--green);margin-top:6px;}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <div class="logo">OV<em>PL</em>.</div>
+  <div class="hdr-mid">
+    <span class="qnum" id="quoteNum">OVPL-2026-001</span>
+    <input class="ci" id="clientName" type="text" placeholder="Nombre del cliente / Job #" oninput="calc()">
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <span style="font-size:.72rem;color:var(--muted);">Kenner, LA</span>
+    <div class="pill">v5 — Screenprint Calc</div>
+  </div>
+</header>
+
+<main class="app">
+<div class="left">
+<nav class="tabs">
+  <button class="tb on"  onclick="stab('garment',this)">① Camisa</button>
+  <button class="tb"     onclick="stab('locs',this)">② Prints</button>
+  <button class="tb"     onclick="stab('screens',this)">③ Pantallas</button>
+  <button class="tb"     onclick="stab('prod',this)">④ Producción</button>
+  <button class="tb"     onclick="stab('price',this)">⑤ Precio</button>
+</nav>
+
+<!-- ═══════════════════ TAB 1: CAMISA ═══════════════════ -->
+<div id="tab-garment" class="panel on">
+
+  <div class="sec">
+    <div class="slbl">SS&amp;Activewear — Precios en vivo</div>
+    <div class="ssabox">
+      <div class="ssa-top">
+        <div class="ssatxt">
+          <strong>SS&amp;Activewear — Precios de tu cuenta wholesale</strong>
+          <small>Precios en vivo desde tu cuenta SS&A. Actualización automática.</small>
+        </div>
+        <a class="ssalink" href="https://www.ssactivewear.com" target="_blank">Abrir SS&amp;A ↗</a>
+      </div>
+      <div id="ssaStatus" class="ssa-status loading">Verificando conexión con SS&A…</div>
+      <div id="ssaSearchBox" style="margin-top:10px;">
+        <div class="prod-search">
+          <input type="text" id="ssaQuery" placeholder="Buscar estilo: Gildan 5000, 3001, Comfort Colors…" onkeydown="if(event.key==='Enter')searchSSA()">
+          <button onclick="searchSSA()">Buscar</button>
+        </div>
+        <div id="ssaResults" class="prod-results" style="display:none;"></div>
+      </div>
+    </div>
+
+    <!-- Shirt color — NUEVO: claro vs oscuro para underbase -->
+    <div class="sec">
+      <div class="slbl">Color de la prenda</div>
+      <div class="g2">
+        <div class="f">
+          <label>Tono de camisa</label>
+          <select id="shirtTone" onchange="checkUnderbase()">
+            <option value="light">Claro / Blanco — sin underbase</option>
+            <option value="medium">Medio (gris, azul claro) — underbase opcional</option>
+            <option value="dark">Oscuro (negro, azul marino, rojo oscuro…)</option>
+          </select>
+        </div>
+        <div class="f">
+          <label>Tipo de prenda</label>
+          <select id="garmentType" onchange="calc()">
+            <option value="tshirt">T-Shirt / Tank</option>
+            <option value="longsleeve">Long Sleeve (+$0.50/pza)</option>
+            <option value="hoodie">Hoodie (+$1.50/pza · velocidad -35%)</option>
+            <option value="crewneck">Crewneck (+$1.25/pza · velocidad -30%)</option>
+          </select>
+        </div>
+      </div>
+      <div id="undbaseWarn" style="display:none;" class="ibox warn" style="margin-top:7px;">
+        ⚠️ <strong>Camisa oscura detectada.</strong> Se recomienda underbase blanco — esto agrega <strong>+1 pantalla automáticamente</strong> y reduce velocidad ~30%. Activa el toggle en Tab ③ Pantallas.
+      </div>
+    </div>
+
+    <!-- CSG toggle -->
+    <div class="trow" id="csgRow">
+      <div class="tinfo">
+        <strong>Cliente trae sus propias camisas (CSG)</strong>
+        <small>Recargo por riesgo de misprint + waiver requerido antes de producir</small>
+      </div>
+      <label class="tog"><input type="checkbox" id="csgOn" onchange="toggleCSG()"><span class="tk"></span></label>
+    </div>
+
+    <!-- Normal shirt section -->
+    <div id="shirtSection">
+      <div class="ibox blue" style="font-size:.7rem;margin-bottom:8px;">
+        💡 <strong>Markup de prenda aplicado automáticamente:</strong> Precio final al cliente incluye markup 1.7× sobre tu costo wholesale. Ajusta en Tab ⑤ si quieres diferente.
+      </div>
+      <div class="presets" id="shirtPresets">
+        <button class="pb on" data-cost="4.50" onclick="pickShirt(this)">Gildan 5000<small>~$4.50</small></button>
+        <button class="pb" data-cost="4.80" onclick="pickShirt(this)">Gildan 64000<small>~$4.80</small></button>
+        <button class="pb" data-cost="8.50" onclick="pickShirt(this)">B+C 3001<small>~$8.50</small></button>
+        <button class="pb" data-cost="8.00" onclick="pickShirt(this)">Next Level 3600<small>~$8.00</small></button>
+        <button class="pb" data-cost="11.50" onclick="pickShirt(this)">Comfort Colors 1717<small>~$11.50</small></button>
+        <button class="pb" data-cost="13.50" onclick="pickShirt(this)">Gildan 18500 Hoodie<small>~$13.50</small></button>
+        <button class="pb" data-cost="11.50" onclick="pickShirt(this)">Gildan 18000 Crew<small>~$11.50</small></button>
+        <button class="pb" data-cost="4.80" onclick="pickShirt(this)">Hanes 5180<small>~$4.80</small></button>
+        <button class="pb" data-cost="0" onclick="pickShirt(this)">Custom<small>escribe abajo</small></button>
+      </div>
+      <div id="ssaLivePrice" style="display:none;" class="ibox green" style="font-size:.7rem;"></div>
+      <div class="g2">
+        <div class="f">
+          <label>Costo camisa S–XL ($/c/u)</label>
+          <input type="number" id="shirtCost" value="4.50" min="0" step=".25" oninput="calc()">
+          <span class="hint">Tu precio wholesale SS&A (logueado).</span>
+        </div>
+        <div class="f">
+          <label>Markup prenda (×)</label>
+          <input type="number" id="garmentMarkup" value="1.70" min="1" max="3" step=".05" oninput="calc()">
+          <span class="hint">1.7× = cobras $7.65 por una camisa de $4.50. Industria: 1.5–2.0×.</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Size upcharges -->
+    <div id="sizeUpchargeSection">
+      <div class="slbl">Recargos por talla</div>
+      <div class="g4">
+        <div class="f"><label>2XL extra</label><input type="number" id="up2xl" value="2.00" min="0" step=".25" oninput="calc()"></div>
+        <div class="f"><label>3XL extra</label><input type="number" id="up3xl" value="4.00" min="0" step=".25" oninput="calc()"></div>
+        <div class="f"><label>4XL extra</label><input type="number" id="up4xl" value="6.00" min="0" step=".25" oninput="calc()"></div>
+        <div class="f"><label>5XL extra</label><input type="number" id="up5xl" value="8.00" min="0" step=".25" oninput="calc()"></div>
+      </div>
+      <span class="hint">Upcharges reales SS&A 2026. Se añaden al costo blended antes del markup.</span>
+    </div>
+
+    <!-- CSG section -->
+    <div id="csgSection" style="display:none;">
+      <div class="ibox danger">
+        🔴 <strong>CSG — WAIVER OBLIGATORIO antes de aceptar el trabajo.</strong> El cliente debe firmar que el shop no es responsable por misprints, daños o scorching en su ropa.
+      </div>
+      <div class="g2">
+        <div class="f">
+          <label>Recargo CSG ($/camisa)</label>
+          <input type="number" id="csgSurcharge" value="6.00" min="0" step=".50" oninput="calc()">
+          <span class="hint">Estándar industria: $4–8. Ropa premium (&gt;$20 retail) = $8–12.</span>
+        </div>
+        <div class="f">
+          <label>Mínimo CSG (piezas)</label>
+          <input type="number" id="csgMin" value="36" min="1" step="1" oninput="calc()">
+          <span class="hint">Shops pro: mínimo 36 para CSG (no 24).</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Size breakdown — 8 tallas -->
+  <div class="sec">
+    <div class="slbl">Desglose por talla</div>
+    <div class="sizemix">
+      <div class="szf"><label>S</label><input type="number" id="sz_s" value="0" min="0" oninput="calc()"></div>
+      <div class="szf"><label>M</label><input type="number" id="sz_m" value="0" min="0" oninput="calc()"></div>
+      <div class="szf"><label>L</label><input type="number" id="sz_l" value="0" min="0" oninput="calc()"></div>
+      <div class="szf"><label>XL</label><input type="number" id="sz_xl" value="0" min="0" oninput="calc()"></div>
+      <div class="szf"><label>2XL</label><input type="number" id="sz_xxl" value="0" min="0" oninput="calc()"></div>
+      <div class="szf"><label>3XL</label><input type="number" id="sz_xxxl" value="0" min="0" oninput="calc()"></div>
+      <div class="szf"><label>4XL</label><input type="number" id="sz_4xl" value="0" min="0" oninput="calc()"></div>
+      <div class="szf"><label>5XL</label><input type="number" id="sz_5xl" value="0" min="0" oninput="calc()"></div>
+    </div>
+    <div style="font-size:.72rem;color:var(--muted);">
+      Total: <strong id="qtyDisp" style="color:var(--white);">0</strong> piezas &nbsp;|&nbsp;
+      Costo blended: <strong id="blendDisp" style="color:var(--ocean);">—</strong>
+    </div>
+  </div>
+
+  <!-- Minimum order -->
+  <div class="sec">
+    <div class="slbl">Mínimo de pedido</div>
+    <div class="g2">
+      <div class="f">
+        <label>Mínimo de piezas</label>
+        <input type="number" id="minOrder" value="24" min="1" step="1" oninput="calc()">
+      </div>
+      <div class="f">
+        <label>Recargo pedido pequeño ($)</label>
+        <input type="number" id="smallOrderFee" value="20" min="0" step="5" oninput="calc()">
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════ TAB 2: PRINTS ═══════════════════ -->
+<div id="tab-locs" class="panel">
+
+  <div class="sec">
+    <div class="slbl">Ubicaciones de print</div>
+    <div class="loc-cards" id="locCards"></div>
+    <button class="add-loc" onclick="addLoc()">+ Agregar ubicación</button>
+    <div id="colorWarning" style="display:none;margin-top:10px;" class="ibox danger">
+      ⚠️ <strong>Tu prensa tiene máximo 5 colores por pasada</strong> (6 cabezas − 1 flash). Para 6+ colores necesitas split-printing (2 pasadas) = +$25 setup adicional, velocidad −20%.
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="slbl">Costo de tinta</div>
+    <div class="g2">
+      <div class="f">
+        <label>Costo por pulgada² por color ($)</label>
+        <input type="number" id="inkSqIn" value="0.003" min="0" step=".001" oninput="calc()">
+        <span class="hint">Plastisol estándar: ~$0.002–0.004/sq in · Blanco/underbase: $0.004–0.005.</span>
+      </div>
+      <div class="f">
+        <label>Labor burden (×)</label>
+        <input type="number" id="laborBurden" value="1.25" min="1" max="2" step=".05" oninput="calc()">
+        <span class="hint">Tu costo real: sueldo × 1.25 (FICA, workers comp, etc.). Industria: 1.2–1.4×.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="slbl">Cambios de color de tinta</div>
+    <div class="trow">
+      <div class="tinfo">
+        <strong>Hay cambios de color (colorways)</strong>
+        <small>Ej: 25 con logo rojo + 25 con logo azul — mismo diseño, diferente color</small>
+      </div>
+      <label class="tog"><input type="checkbox" id="inkChangeOn" onchange="toggleInkChange()"><span class="tk"></span></label>
+    </div>
+    <div id="inkChangePanel" style="display:none;margin-top:7px;">
+      <div class="g2">
+        <div class="f">
+          <label>Número de cambios</label>
+          <input type="number" id="inkChanges" value="1" min="1" oninput="calc()">
+          <span class="hint">2 colorways = 1 cambio.</span>
+        </div>
+        <div class="f">
+          <label>Costo por cambio ($)</label>
+          <input type="number" id="inkChangeFee" value="15" min="0" step="5" oninput="calc()">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="slbl">Personalización individual</div>
+    <div class="trow">
+      <div class="tinfo">
+        <strong>Nombres o números individuales</strong>
+        <small>Equipo deportivo, eventos, etc.</small>
+      </div>
+      <label class="tog"><input type="checkbox" id="personOn" onchange="togglePerson()"><span class="tk"></span></label>
+    </div>
+    <div id="personPanel" style="display:none;margin-top:7px;">
+      <div class="g2">
+        <div class="f">
+          <label>Piezas a personalizar</label>
+          <input type="number" id="personQty" value="10" min="1" oninput="calc()">
+        </div>
+        <div class="f">
+          <label>Costo por pieza ($)</label>
+          <input type="number" id="personFee" value="5.00" min="0" step=".50" oninput="calc()">
+          <span class="hint">HTV: $3–6 · DTF: $4–7 · SP ind.: $8–15+</span>
+        </div>
+      </div>
+      <div class="f" style="margin-top:8px;">
+        <label>Método</label>
+        <select id="personMethod" onchange="calc()">
+          <option value="HTV (vinilo de corte)">HTV — Vinilo de corte</option>
+          <option value="DTF (Direct to Film)">DTF — Direct to Film</option>
+          <option value="Transferencia de calor">Transferencia de calor</option>
+          <option value="Screenprint individual">Screenprint individual</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════ TAB 3: PANTALLAS ═══════════════════ -->
+<div id="tab-screens" class="panel">
+
+  <div class="sec">
+    <div class="slbl">Tipo de trabajo</div>
+    <div class="trow" id="repeatRow">
+      <div class="tinfo">
+        <strong>Reorden — pantallas ya quemadas</strong>
+        <small>Válido dentro de 12 meses. Después se recobran pantallas.</small>
+      </div>
+      <label class="tog"><input type="checkbox" id="repeatOn" onchange="toggleRepeat()"><span class="tk"></span></label>
+    </div>
+    <div id="repeatInfo" style="display:none;">
+      <div class="ibox green">✓ <strong>Reorden activo:</strong> Pantallas y art setup en $0. Solo camisas, tinta y labor.</div>
+    </div>
+  </div>
+
+  <!-- Underbase toggle — NUEVO -->
+  <div class="sec">
+    <div class="slbl">Underbase (camisas oscuras)</div>
+    <div class="trow" id="undbaseRow">
+      <div class="tinfo">
+        <strong>Agregar underbase blanco</strong>
+        <small>Requerido para imprimir colores en camisa oscura. +1 pantalla, +flash, −velocidad 30%.</small>
+      </div>
+      <label class="tog"><input type="checkbox" id="undbaseOn" onchange="calc()"><span class="tk"></span></label>
+    </div>
+    <div id="undbaseInfo" style="display:none;margin-top:5px;">
+      <div class="ibox warn">⚠️ Underbase activo: se agrega <strong>+1 pantalla blanca</strong>, costo de tinta blanca (1.35×), y la velocidad se reduce 30% por ciclo flash adicional.</div>
+    </div>
+  </div>
+
+  <div id="screenCostSection">
+    <div class="sec">
+      <div class="slbl">Costo por pantalla (interno)</div>
+      <div class="ibox blue" style="font-size:.7rem;margin-bottom:8px;">
+        💡 Estos son tus costos INTERNOS (lo que te cuesta a ti). El precio que cobras al cliente está separado en "Fee al cliente" abajo.
+      </div>
+      <div class="scbox">
+        <div class="scbox-t">Costo real de cada pantalla</div>
+        <div class="scrow"><span class="sclbl">Emulsión + coating</span><input class="sci" type="number" id="sc_em" value="1.00" step=".25" oninput="calc()"></div>
+        <div class="scrow"><span class="sclbl">Film / transparencia inkjet</span><input class="sci" type="number" id="sc_film" value="1.25" step=".25" oninput="calc()"></div>
+        <div class="scrow"><span class="sclbl">Quemado (lámpara LED)</span><input class="sci" type="number" id="sc_burn" value="0.25" step=".10" oninput="calc()"></div>
+        <div class="scrow"><span class="sclbl">Reclamado (químicos)</span><input class="sci" type="number" id="sc_rec" value="0.75" step=".25" oninput="calc()"></div>
+        <div class="scrow"><span class="sclbl">Frame amortizado</span><input class="sci" type="number" id="sc_fr" value="0.50" step=".25" oninput="calc()"></div>
+        <div class="scrow"><span class="sclbl">Labor coater (~3 min × $22/hr)</span><input class="sci" type="number" id="sc_labor" value="1.25" step=".25" oninput="calc()"></div>
+        <div class="sctotal"><span style="color:var(--muted);">Costo interno / pantalla</span><span id="scPerScr" style="color:var(--ocean);">$5.00</span></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="slbl">Fee de pantalla cobrado al cliente ($)</div>
+      <div class="g2">
+        <div class="f">
+          <label>Fee por pantalla al cliente</label>
+          <input type="number" id="screenFeeClient" value="25.00" min="0" step="5" oninput="calc()">
+          <span class="hint">Industria: $20–35/pantalla para shop pequeño.</span>
+        </div>
+        <div class="f">
+          <label>Fee pantalla reorden</label>
+          <input type="number" id="screenFeeReorder" value="0" min="0" step="5" oninput="calc()">
+          <span class="hint">Cobrar $0 en reorden &lt;12 meses. $10–15 si ya pasó más tiempo.</span>
+        </div>
+      </div>
+      <div class="hint" style="margin-top:5px;">Pantallas totales: <span id="scSummary" style="color:var(--ocean);font-weight:600;">—</span></div>
+    </div>
+
+    <div class="sec">
+      <div class="slbl">Art setup &amp; otros fijos</div>
+      <div class="f" style="margin-bottom:9px;">
+        <label>Setup / calibración de prensa ($)</label>
+        <input type="number" id="setupFee" value="25" min="0" step="5" oninput="calc()">
+        <span class="hint">Siempre aplica. Registro, squeegee, pruebas.</span>
+      </div>
+      <div class="trow">
+        <div class="tinfo">
+          <strong>Archivo necesita arreglo</strong>
+          <small>Low-res, formato incorrecto, separación manual, etc.</small>
+        </div>
+        <label class="tog"><input type="checkbox" id="artOn" onchange="toggleArt()"><span class="tk"></span></label>
+      </div>
+      <div id="artPanel" style="display:none;margin-top:7px;">
+        <div class="g2">
+          <div class="f">
+            <label>Costo arreglo ($)</label>
+            <input type="number" id="artFee" value="35" min="0" step="5" oninput="calc()">
+          </div>
+          <div class="f">
+            <label>Complejidad</label>
+            <select id="artComp" onchange="applyArtComp()">
+              <option value="25">Simple — ajuste menor ($25)</option>
+              <option value="35" selected>Estándar — sep / resize ($35)</option>
+              <option value="55">Complejo — rediseño ($55)</option>
+              <option value="0">Manual</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Halftones toggle — NUEVO -->
+      <div class="trow" style="margin-top:7px;">
+        <div class="tinfo">
+          <strong>Halftones / Sim Process / Index</strong>
+          <small>Diseño con degradados o foto-realismo. Mesh más alto, burn más sensible, +art fee.</small>
+        </div>
+        <label class="tog"><input type="checkbox" id="halftoneOn" onchange="toggleHalftone()"><span class="tk"></span></label>
+      </div>
+      <div id="halftonePanel" style="display:none;margin-top:7px;">
+        <div class="ibox blue" style="font-size:.7rem;">
+          Halftones/SimProc/Index: +$3 por pantalla (costo interno), +$30 art fee automático, misprint rate +2%.
+        </div>
+      </div>
+
+      <div class="trow" style="margin-top:7px;">
+        <div class="tinfo">
+          <strong>PMS — mezcla Pantone exacta</strong>
+          <small>Tinta mezclada a color específico.</small>
+        </div>
+        <label class="tog"><input type="checkbox" id="pmsOn" onchange="togglePMS()"><span class="tk"></span></label>
+      </div>
+      <div id="pmsPanel" style="display:none;margin-top:7px;">
+        <div class="g2">
+          <div class="f">
+            <label>Colores PMS</label>
+            <input type="number" id="pmsQty" value="1" min="1" oninput="calc()">
+          </div>
+          <div class="f">
+            <label>Fee por color PMS ($)</label>
+            <input type="number" id="pmsFee" value="20" min="0" step="5" oninput="calc()">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="slbl">Envío / otros costos fijos</div>
+    <div class="g2">
+      <div class="f">
+        <label>Envío / entrega ($)</label>
+        <input type="number" id="shipFee" value="0" min="0" step="5" oninput="calc()">
+      </div>
+      <div class="f">
+        <label>Otros costos fijos ($)</label>
+        <input type="number" id="otherFix" value="0" min="0" step="5" oninput="calc()">
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════ TAB 4: PRODUCCIÓN ═══════════════════ -->
+<div id="tab-prod" class="panel">
+
+  <div class="sec">
+    <div class="slbl">Nivel de experiencia del operador</div>
+    <div class="expg">
+      <button class="expb" data-exp="beginner" onclick="setExp(this)">
+        <span class="en">🟠 Principiante</span>
+        <span class="ed">Aprendiendo registro. Velocidad baja.</span>
+      </button>
+      <button class="expb on" data-exp="intermediate" onclick="setExp(this)">
+        <span class="en">🟡 Intermedio</span>
+        <span class="ed">Consistente. Mejora continua.</span>
+      </button>
+      <button class="expb" data-exp="experienced" onclick="setExp(this)">
+        <span class="en">🟢 Experimentado</span>
+        <span class="ed">Rápido y consistente.</span>
+      </button>
+    </div>
+    <div class="ibox blue" style="font-size:.7rem;margin-bottom:12px;">
+      💡 <strong>Velocidad se ajusta automáticamente por # de colores y flash.</strong> Fórmula: Base − 8%/color extra − 30% si hay flash/underbase.
+    </div>
+    <div class="abox">
+      <div class="abox-t">⚡ Factores automáticos</div>
+      <div class="arow"><span class="al">Desperdicio extra de tinta</span><span class="av w" id="af-waste">+20%</span></div>
+      <div class="arow"><span class="al">Tasa de misprints</span><span class="av w" id="af-spoil">5%</span></div>
+      <div class="arow"><span class="al">Camisas de prueba (setup)</span><span class="av" id="af-tests">3 camisas</span></div>
+      <div class="arow"><span class="al">Velocidad base (1 color)</span><span class="av" id="af-speed">90 pzas/hr</span></div>
+      <div class="arow"><span class="al">Velocidad ajustada (tu job)</span><span class="av g" id="af-speed-adj">—</span></div>
+      <div class="arow"><span class="al">Camisas extra a comprar</span><span class="av w" id="af-extra">—</span></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="slbl">Labor y prensa</div>
+    <div class="g2">
+      <div class="f">
+        <label>Tarifa de labor ($/hr — sueldo base)</label>
+        <input type="number" id="laborRate" value="18" min="0" step="1" oninput="calc()">
+        <span class="hint">Costo real con burden = tarifa × 1.25 (campo en Tab ② Prints).</span>
+      </div>
+      <div class="f">
+        <label>Velocidad manual (sobreescribir)</label>
+        <input type="number" id="pressSpeed" value="90" min="1" step="5" oninput="calc()">
+        <span class="hint">Auto si dejas en 0. Velocidad base antes del ajuste por colores.</span>
+      </div>
+    </div>
+
+    <!-- Flash -->
+    <div class="trow">
+      <div class="tinfo">
+        <strong>Flash cure entre colores</strong>
+        <small>Auto ON en 2+ colores o si underbase está activo.</small>
+      </div>
+      <label class="tog"><input type="checkbox" id="flashOn" onchange="calc()"><span class="tk"></span></label>
+    </div>
+    <div class="g2" style="margin-top:8px;">
+      <div class="f">
+        <label>Flash cure ($/pieza)</label>
+        <input type="number" id="flashCost" value="0.10" min="0" step=".01" oninput="calc()">
+      </div>
+      <div class="f">
+        <label>Secado final / dryer ($/pieza)</label>
+        <input type="number" id="cureCost" value="0.07" min="0" step=".01" oninput="calc()">
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="slbl">Setup time (separado del run time)</div>
+    <div class="ibox blue" style="font-size:.7rem;margin-bottom:8px;">
+      💡 El setup (cargar pantallas, mezclar tinta, pruebas) toma 20–60 min ANTES del primer print. Este costo se divide entre todas las camisas del pedido.
+    </div>
+    <div class="g3">
+      <div class="f">
+        <label>Setup base (min)</label>
+        <input type="number" id="setupTimeBase" value="20" min="0" step="5" oninput="calc()">
+        <span class="hint">Tiempo fijo siempre.</span>
+      </div>
+      <div class="f">
+        <label>+min por color</label>
+        <input type="number" id="setupTimePerColor" value="10" min="0" step="5" oninput="calc()">
+        <span class="hint">Mezcla + registro por pantalla.</span>
+      </div>
+      <div class="f">
+        <label>Breakdown/cleanup (min)</label>
+        <input type="number" id="breakdownTime" value="25" min="0" step="5" oninput="calc()">
+        <span class="hint">Limpieza, reclaim, guardar.</span>
+      </div>
+    </div>
+    <div id="timeBadge" class="time-badge">⏱ Tiempo estimado del job: —</div>
+  </div>
+
+  <div class="sec">
+    <div class="slbl">Consumibles por pieza</div>
+    <div class="g3">
+      <div class="f">
+        <label>Cinta pallet / adhesivo</label>
+        <input type="number" id="palletCost" value="0.06" min="0" step=".01" oninput="calc()">
+      </div>
+      <div class="f">
+        <label>Press wash / solventes</label>
+        <input type="number" id="washCost" value="0.06" min="0" step=".01" oninput="calc()">
+      </div>
+      <div class="f">
+        <label>Bolsas / empaque</label>
+        <input type="number" id="bagCost" value="0.05" min="0" step=".01" oninput="calc()">
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════ TAB 5: PRECIO ═══════════════════ -->
+<div id="tab-price" class="panel">
+
+  <div class="sec">
+    <div class="slbl">Margen de ganancia</div>
+    <div class="mdisp" id="mDisp">40%</div>
+    <div class="msub">Margen sobre costos de decoración (sin markup de camisa)</div>
+    <input type="range" id="marginSlider" min="0" max="150" value="40" step="1"
+      oninput="document.getElementById('mDisp').textContent=this.value+'%';calc()">
+    <div class="sllbs"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%+</span></div>
+    <div class="ibox blue" style="font-size:.7rem;margin-top:10px;">
+      💡 Recomendado: 40–50% para covers overhead real, impuestos y sorpresas. Menos de 25% = riesgo.
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="slbl">Turnaround — tiempo de entrega</div>
+    <div class="tntags" style="grid-template-columns:repeat(3,1fr);">
+      <div class="tntag on" data-rush="0" onclick="setTurnaround(this)">
+        <span class="tn-name">Estándar</span>
+        <span class="tn-days">7–10 días hábiles</span>
+        <span class="tn-sur" style="color:var(--green);">Sin recargo</span>
+      </div>
+      <div class="tntag" data-rush="0.25" onclick="setTurnaround(this)">
+        <span class="tn-name">Rush</span>
+        <span class="tn-days">3–5 días hábiles</span>
+        <span class="tn-sur" style="color:var(--warn);">+25% job completo</span>
+      </div>
+      <div class="tntag" data-rush="0.50" onclick="setTurnaround(this)">
+        <span class="tn-name">Super Rush</span>
+        <span class="tn-days">24–48 horas</span>
+        <span class="tn-sur" style="color:var(--danger);">+50% job completo</span>
+      </div>
+    </div>
+    <div class="hint warn" style="margin-top:4px;">⚠️ Rush se aplica sobre el subtotal COMPLETO (garment + decoración + fees), no solo producción.</div>
+  </div>
+
+  <div class="sec">
+    <div class="slbl">Overhead</div>
+    <div class="g2">
+      <div class="f">
+        <label>Overhead fijo ($/job)</label>
+        <input type="number" id="overheadFixed" value="25" min="0" step="5" oninput="calc()">
+        <span class="hint">Mínimo fijo por trabajo (renta, luz, seguro dividido entre jobs/mes).</span>
+      </div>
+      <div class="f">
+        <label>Overhead variable (%)</label>
+        <input type="number" id="overhead" value="10" min="0" max="60" step="1" oninput="calc()">
+        <span class="hint">% sobre subtotal. Total overhead = fijo + variable.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="slbl">Extras opcionales</div>
+    <div class="trow">
+      <div class="tinfo">
+        <strong>Depósito requerido (50% upfront)</strong>
+        <small>Muestra en el quote el monto del depósito y balance.</small>
+      </div>
+      <label class="tog"><input type="checkbox" id="depositOn" onchange="calc()"><span class="tk"></span></label>
+    </div>
+    <div class="trow">
+      <div class="tinfo">
+        <strong>Pago con tarjeta de crédito</strong>
+        <small>Stripe/Square 2.9% + $0.30 por transacción.</small>
+      </div>
+      <label class="tog"><input type="checkbox" id="ccFeeOn" onchange="calc()"><span class="tk"></span></label>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="slbl">Política de misprints</div>
+    <div class="f" style="margin-bottom:9px;">
+      <label>Política</label>
+      <select id="misprintPolicy" onchange="applyMisprintPolicy()">
+        <option value="standard">Estándar — hasta 2% de defectos tolerados</option>
+        <option value="guarantee">Garantía total — cualquier defecto sin costo</option>
+        <option value="none">Sin política</option>
+        <option value="custom">Personalizada</option>
+      </select>
+    </div>
+    <div class="f" id="misprintTextBox">
+      <label>Texto en quote</label>
+      <textarea id="misprintText" rows="2">Hasta 2% de defectos son tolerados en trabajos de screenprint. Defectos por encima de este porcentaje serán reimpresos sin costo adicional.</textarea>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="slbl">Sales Tax — Jefferson Parish, LA</div>
+    <div class="trow" id="taxRow">
+      <div class="tinfo">
+        <strong>Sales Tax — Jefferson Parish (Kenner)</strong>
+        <small id="taxRateLabel">9.75% (5% estado + 4.75% local) — actualizada ene 2025</small>
+      </div>
+      <label class="tog"><input type="checkbox" id="taxOn" onchange="calc()"><span class="tk"></span></label>
+    </div>
+    <!-- Tax exempt toggle — NUEVO -->
+    <div class="trow">
+      <div class="tinfo">
+        <strong>Cliente exento de impuesto</strong>
+        <small>Resale certificate, nonprofit, gobierno. Requiere cert. por escrito.</small>
+      </div>
+      <label class="tog"><input type="checkbox" id="taxExemptOn" onchange="toggleTaxExempt()"><span class="tk"></span></label>
+    </div>
+    <div id="taxExemptPanel" style="display:none;margin-top:7px;">
+      <div class="ibox green" style="font-size:.7rem;">
+        ✓ Tax-exempt activo. Guarda el certificado R-1064 en archivo (Louisiana DOR). Se mostrará en el quote con nota de exención.
+      </div>
+      <div class="f">
+        <label>Número de certificado / Razón</label>
+        <input type="text" id="taxExemptCert" placeholder="Ej: R-1064 #12345 / Resale">
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="slbl">Vencimiento del quote</div>
+    <div class="g2">
+      <div class="f">
+        <label>Quote válido hasta</label>
+        <input type="date" id="quoteExpiry" oninput="calc()">
+        <span class="hint">Precios SS&A cambian. Recomendado: 30 días.</span>
+      </div>
+      <div class="f">
+        <label>Días de validez</label>
+        <input type="number" id="expiryDays" value="30" min="1" max="90" step="1" oninput="setExpiryFromDays()">
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="slbl">Simulación de volumen</div>
+    <div id="volumeTiers"></div>
+  </div>
+
+</div>
+</div><!-- /left -->
+
+<!-- ═══════════════════ RIGHT PANEL ═══════════════════ -->
+<div class="right">
+  <div class="qwrap">
+    <div>
+      <div class="qh">
+        <span>Quote en vivo</span>
+        <span class="qh-num" id="qNumDisp"></span>
+      </div>
+      <div id="qClientDisp" style="font-size:.72rem;color:var(--muted);margin-top:3px;"></div>
+    </div>
+
+    <div class="phero">
+      <div class="phlbl">Precio por pieza</div>
+      <div class="phval" id="r-unit">$0.00</div>
+      <div class="phsub" id="r-sub">—</div>
+    </div>
+
+    <div class="sg">
+      <div class="sc"><div class="sl">Total trabajo</div><div class="sv b" id="r-total">$0</div></div>
+      <div class="sc"><div class="sl">Ganancia bruta</div><div class="sv g" id="r-profit">$0</div></div>
+      <div class="sc"><div class="sl">Costo / pieza</div><div class="sv" id="r-cost">$0</div></div>
+      <div class="sc"><div class="sl">Pantallas</div><div class="sv" id="r-screens">—</div></div>
+      <div class="sc"><div class="sl">Piezas extra</div><div class="sv w" id="r-extra">—</div></div>
+      <div class="sc"><div class="sl">Total a comprar</div><div class="sv" id="r-buy">—</div></div>
+    </div>
+
+    <!-- Profit breakdown — NUEVO -->
+    <div class="profit-box">
+      <div style="font-size:.58rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ocean);margin-bottom:6px;">Análisis de ganancia real</div>
+      <div class="profit-row"><span class="profit-lbl">Ingresos brutos</span><span class="profit-val" id="pr-revenue">—</span></div>
+      <div class="profit-row"><span class="profit-lbl">− Costos directos</span><span class="profit-val" id="pr-direct">—</span></div>
+      <div class="profit-row"><span class="profit-lbl">= Ganancia bruta</span><span class="profit-val g" id="pr-gross">—</span></div>
+      <div class="profit-row"><span class="profit-lbl">− CC processing (si aplica)</span><span class="profit-val" id="pr-cc">—</span></div>
+      <div class="profit-row" style="border-top:1px solid var(--gb);padding-top:4px;margin-top:2px;">
+        <span class="profit-lbl" style="color:var(--white);font-weight:600;">≈ Ganancia neta estimada</span>
+        <span class="profit-val g" id="pr-net" style="color:var(--green);">—</span>
+      </div>
+      <div id="depositDisp" style="display:none;margin-top:6px;font-size:.72rem;color:var(--ocean);"></div>
+    </div>
+
+    <div id="alertsBox"></div>
+
+    <div style="border-top:1px solid var(--gb);padding-top:.7rem;">
+      <div class="bkt">Desglose de costos — por pieza</div>
+      <div id="bkRows"></div>
+      <div class="bksum"><span>Precio de venta / pieza</span><span id="r-final">$0.00</span></div>
+    </div>
+  </div>
+  <div class="acts">
+    <button class="abtn ap" onclick="showPrintModal()">Guardar / Imprimir PDF</button>
+    <button class="abtn as" onclick="showCopyModal()">Copiar Quote</button>
+  </div>
+</div>
+</main>
+
+<!-- ═══ MODAL ═══ -->
+<div id="exportModal" class="movl" style="display:none;" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="mhd"><span class="mtitle" id="modalTitle">Quote</span><button class="mclose" onclick="closeModal()">✕</button></div>
+    <div class="mbody" id="modalBody"></div>
+    <div class="mfoot" id="modalFoot"></div>
+  </div>
+</div>
+
+<script>
+// ════ STATE ════
+let expLevel = 'intermediate';
+let turnaroundRate = 0;
+let locs = [{id:1, name:'Front', customName:'', w:12, h:14, colors:2, inkMult:1.0}];
+let nextId = 2;
+let ssaConnected = false;
+let ssaCredentials = {account:'', key:''};
+
+// ════ EXPERIENCE TABLE (velocidad base para 1 color) ════
+const EXP = {
+  beginner:     {waste:.30, spoil:.08, tests:4, speed:60},
+  intermediate: {waste:.20, spoil:.05, tests:3, speed:90},
+  experienced:  {waste:.05, spoil:.01, tests:1, speed:130},
+};
+
+const DEF_SIZES = {
+  'Front':{w:12,h:14},'Back':{w:12,h:14},
+  'Left chest':{w:4,h:4},'Right chest':{w:4,h:4},
+  'Left sleeve':{w:3,h:11},'Right sleeve':{w:3,h:11},
+  'Neck tag':{w:2.5,h:2},'Bottom hem':{w:5,h:1.5},'Custom':{w:6,h:6},
+};
+const LOC_NAMES = ['Front','Back','Left chest','Right chest','Left sleeve','Right sleeve','Neck tag','Bottom hem','Custom'];
+
+// Ink types: [multiplier, label, baseInkCost override note]
+const INK_TYPES = [
+  [1.0,'Plastisol'],
+  [1.6,'Water-based (+60%)'],
+  [1.8,'Discharge (+80%)'],
+  [1.6,'Metallic'],
+  [2.2,'Glitter (+120%)'],
+  [1.8,'Shimmer/Pearl'],
+  [2.0,'Glow-in-dark'],
+  [2.5,'Reflective (+150%)'],
+  [2.5,'High-density 3D'],
+  [1.15,'Soft-hand additive'],
+  [2.0,'Puff / Foil'],
+  [1.4,'Fluorescent/Neon'],
+];
+
+// ════ SS&A API — calls go through /api/ssa-* proxy (credentials are server-side) ════
+async function initSSA() {
+  const st = document.getElementById('ssaStatus');
+  // Quick ping to verify the proxy is up and credentials work
+  try {
+    const r = await fetch('/api/ssa-styles?q=Gildan+5000');
+    if (r.ok) {
+      ssaConnected = true;
+      st.className = 'ssa-status ok';
+      st.textContent = '✓ Conectado a SS&A — precios de tu cuenta wholesale en vivo.';
+      document.getElementById('ssaSearchBox').innerHTML = `
+        <div class="prod-search">
+          <input type="text" id="ssaQuery" placeholder="Buscar: Gildan 5000, Bella Canvas 3001, Comfort Colors…" onkeydown="if(event.key==='Enter')searchSSA()">
+          <button onclick="searchSSA()">Buscar</button>
+        </div>
+        <div id="ssaResults" class="prod-results" style="display:none;"></div>`;
+    } else {
+      st.className = 'ssa-status err';
+      st.textContent = '⚠ No se pudo conectar a SS&A (error ' + r.status + '). Verifica las env vars en Vercel.';
+    }
+  } catch(e) {
+    st.className = 'ssa-status err';
+    st.textContent = '⚠ Sin conexión al proxy. ¿Está desplegado en Vercel?';
+  }
+}
+
+async function searchSSA() {
+  const q = document.getElementById('ssaQuery').value.trim();
+  if (!q) return;
+  const res = document.getElementById('ssaResults');
+  res.style.display = 'block';
+  res.innerHTML = '<div class="prod-item"><span class="prod-meta">Buscando en SS&A…</span></div>';
+  try {
+    const r = await fetch('/api/ssa-styles?q=' + encodeURIComponent(q));
+    const data = await r.json();
+    if (!data || data.length === 0) {
+      res.innerHTML = '<div class="prod-item"><span class="prod-meta">Sin resultados para "' + q + '".</span></div>';
+      return;
+    }
+    res.innerHTML = data.slice(0, 12).map(s =>
+      `<div class="prod-item" onclick="loadStylePrices(${s.styleID},'${s.brandName} ${s.styleName}')">
+        <div class="prod-name">${s.brandName} ${s.styleName}</div>
+        <div class="prod-meta">${s.baseCategory || ''} · Click para cargar precios</div>
+      </div>`
+    ).join('');
+  } catch(e) {
+    res.innerHTML = '<div class="prod-item"><span class="prod-meta" style="color:var(--danger)">Error al buscar. Revisa la conexión.</span></div>';
+  }
+}
+
+async function loadStylePrices(styleID, name) {
+  const res = document.getElementById('ssaResults');
+  res.innerHTML = '<div class="prod-item"><span class="prod-meta">Cargando precios…</span></div>';
+  try {
+    const r = await fetch('/api/ssa-products?styleid=' + styleID);
+    const data = await r.json();
+    if (!data || !data.prices || data.prices.length === 0) return;
+
+    // Find S-XL base price
+    const sxl = data.prices.find(p =>
+      p.sizePriceCodeName === 'S-XL' ||
+      p.sizePriceCodeName === 'S/M-XL/XXL' ||
+      p.sizeName === 'M' || p.sizeName === 'L'
+    ) || data.prices[0];
+
+    const xxl  = data.prices.find(p => p.sizePriceCodeName === '2XL' || p.sizeName === '2XL');
+    const xxxl = data.prices.find(p => p.sizePriceCodeName === '3XL' || p.sizeName === '3XL');
+    const x4   = data.prices.find(p => p.sizePriceCodeName === '4XL' || p.sizeName === '4XL');
+    const x5   = data.prices.find(p => p.sizePriceCodeName === '5XL' || p.sizeName === '5XL');
+
+    if (sxl) {
+      document.getElementById('shirtCost').value = sxl.customerPrice.toFixed(2);
+      document.querySelectorAll('#shirtPresets .pb').forEach(b => b.classList.remove('on'));
+
+      let msg = `✓ <strong>${name}</strong> — S–XL: <strong>$${sxl.customerPrice.toFixed(2)}</strong>`;
+
+      if (xxl)  { const up = (xxl.customerPrice  - sxl.customerPrice).toFixed(2); document.getElementById('up2xl').value = up; msg += ` · 2XL +$${up}`; }
+      if (xxxl) { const up = (xxxl.customerPrice - sxl.customerPrice).toFixed(2); document.getElementById('up3xl').value = up; msg += ` · 3XL +$${up}`; }
+      if (x4)   { const up = (x4.customerPrice   - sxl.customerPrice).toFixed(2); document.getElementById('up4xl').value = up; msg += ` · 4XL +$${up}`; }
+      if (x5)   { const up = (x5.customerPrice   - sxl.customerPrice).toFixed(2); document.getElementById('up5xl').value = up; msg += ` · 5XL +$${up}`; }
+
+      msg += ' <span style="font-size:.6rem;opacity:.7">(tu cuenta wholesale)</span>';
+
+      const lp = document.getElementById('ssaLivePrice');
+      lp.innerHTML = msg;
+      lp.style.display = 'block';
+    }
+
+    res.style.display = 'none';
+    calc();
+  } catch(e) {
+    res.innerHTML = '<div class="prod-item"><span class="prod-meta" style="color:var(--danger)">Error cargando precios.</span></div>';
+  }
+}
+
+// ════ QUOTE NUMBER ════
+function initQuoteNum() {
+  const stored = parseInt(localStorage.getItem('ovpl_qnum') || '0') + 1;
+  localStorage.setItem('ovpl_qnum', stored);
+  const yr = new Date().getFullYear();
+  const qn = 'OVPL-' + yr + '-' + String(stored).padStart(3,'0');
+  document.getElementById('quoteNum').textContent = qn;
+  document.getElementById('qNumDisp').textContent = qn;
+  return qn;
+}
+
+function setExpiryFromDays() {
+  const d = new Date();
+  d.setDate(d.getDate() + (parseInt(document.getElementById('expiryDays').value) || 30));
+  document.getElementById('quoteExpiry').value = d.toISOString().split('T')[0];
+}
+function initExpiry() { setExpiryFromDays(); }
+
+// ════ TABS ════
+function stab(id, btn) {
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.tb').forEach(b=>b.classList.remove('on'));
+  document.getElementById('tab-'+id).classList.add('on');
+  btn.classList.add('on');
+}
+
+// ════ SHIRT ════
+function pickShirt(btn) {
+  document.querySelectorAll('#shirtPresets .pb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  const c = parseFloat(btn.dataset.cost);
+  if (c > 0) document.getElementById('shirtCost').value = c.toFixed(2);
+  else document.getElementById('shirtCost').focus();
+  document.getElementById('ssaLivePrice').style.display='none';
+  calc();
+}
+
+// ════ CSG ════
+function toggleCSG() {
+  const on = gch('csgOn');
+  document.getElementById('shirtSection').style.display = on ? 'none' : 'block';
+  document.getElementById('sizeUpchargeSection').style.display = on ? 'none' : 'block';
+  document.getElementById('csgSection').style.display = on ? 'block' : 'none';
+  document.getElementById('csgRow').classList.toggle('active', on);
+  calc();
+}
+
+// ════ UNDERBASE ════
+function checkUnderbase() {
+  const tone = document.getElementById('shirtTone').value;
+  const warn = document.getElementById('undbaseWarn');
+  if (tone === 'dark') { warn.style.display='block'; }
+  else { warn.style.display='none'; }
+  calc();
+}
+
+// ════ REPEAT ════
+function toggleRepeat() {
+  const on = gch('repeatOn');
+  document.getElementById('repeatRow').classList.toggle('active', on);
+  document.getElementById('repeatInfo').style.display = on ? 'block' : 'none';
+  document.getElementById('screenCostSection').style.opacity = on ? '0.4' : '1';
+  document.getElementById('screenCostSection').style.pointerEvents = on ? 'none' : 'auto';
+  calc();
+}
+
+// ════ INK CHANGE ════
+function toggleInkChange() {
+  document.getElementById('inkChangePanel').style.display = gch('inkChangeOn') ? 'block' : 'none';
+  calc();
+}
+
+// ════ PERSONALIZATION ════
+function togglePerson() {
+  document.getElementById('personPanel').style.display = gch('personOn') ? 'block' : 'none';
+  calc();
+}
+
+// ════ EXPERIENCE ════
+function setExp(btn) {
+  document.querySelectorAll('.expb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  expLevel = btn.dataset.exp;
+  document.getElementById('pressSpeed').value = EXP[expLevel].speed;
+  calc();
+}
+
+// ════ TURNAROUND ════
+function setTurnaround(el) {
+  document.querySelectorAll('.tntag').forEach(t=>t.classList.remove('on'));
+  el.classList.add('on');
+  turnaroundRate = parseFloat(el.dataset.rush);
+  calc();
+}
+
+// ════ ART ════
+function toggleArt() {
+  const on = gch('artOn');
+  document.getElementById('artPanel').style.display = on ? 'block' : 'none';
+  if (!on) document.getElementById('artFee').value='0';
+  else applyArtComp();
+  calc();
+}
+function applyArtComp() {
+  const v = document.getElementById('artComp').value;
+  if (v !== '0') document.getElementById('artFee').value = v;
+  calc();
+}
+
+// ════ HALFTONE ════
+function toggleHalftone() {
+  document.getElementById('halftonePanel').style.display = gch('halftoneOn') ? 'block' : 'none';
+  calc();
+}
+
+// ════ PMS ════
+function togglePMS() {
+  document.getElementById('pmsPanel').style.display = gch('pmsOn') ? 'block' : 'none';
+  calc();
+}
+
+// ════ TAX EXEMPT ════
+function toggleTaxExempt() {
+  const on = gch('taxExemptOn');
+  document.getElementById('taxExemptPanel').style.display = on ? 'block' : 'none';
+  if (on) {
+    document.getElementById('taxOn').checked = false;
+    document.getElementById('taxRow').style.opacity = '0.5';
+  } else {
+    document.getElementById('taxRow').style.opacity = '1';
+  }
+  calc();
+}
+
+// ════ MISPRINT POLICY ════
+function applyMisprintPolicy() {
+  const v = document.getElementById('misprintPolicy').value;
+  const box = document.getElementById('misprintTextBox');
+  const txt = document.getElementById('misprintText');
+  if (v==='standard') { box.style.display='flex'; txt.value='Hasta 2% de defectos son tolerados en trabajos de screenprint. Defectos por encima de este porcentaje serán reimpresos sin costo adicional.'; }
+  else if (v==='guarantee') { box.style.display='flex'; txt.value='Garantizamos la calidad total del trabajo. Cualquier pieza defectuosa será reimpresa sin costo.'; }
+  else if (v==='none') { box.style.display='none'; }
+  else { box.style.display='flex'; }
+}
+
+// ════ LOCATION BUILDER ════
+function addLoc() {
+  locs.push({id:nextId++, name:'Back', customName:'', w:12, h:14, colors:2, inkMult:1.0});
+  renderLocs(); calc();
+}
+function removeLoc(id) {
+  if (locs.length<=1) return;
+  locs = locs.filter(l=>l.id!==id);
+  renderLocs(); calc();
+}
+function locChange(id, field, val) {
+  const l = locs.find(x=>x.id===id); if (!l) return;
+  if (field==='name') { l.name=val; const d=DEF_SIZES[val]; if(d){l.w=d.w;l.h=d.h;} }
+  else if (field==='customName') { l.customName=val; }
+  else if (field==='colors') { l.colors=Math.max(1,parseInt(val)||1); }
+  else if (field==='w'||field==='h') { l[field]=Math.max(0.1,parseFloat(val)||0.1); }
+  else if (field==='inkMult') { l.inkMult=parseFloat(val)||1; }
+  renderLocs(); calc();
+}
+function applySize(id,w,h) {
+  const l=locs.find(x=>x.id===id); if(!l) return;
+  l.w=w;l.h=h;renderLocs();calc();
+}
+
+function renderLocs() {
+  const c = document.getElementById('locCards');
+  c.innerHTML = locs.map((l,i) => {
+    const area = (l.w*l.h).toFixed(1);
+    const opts = LOC_NAMES.map(n=>`<option value="${n}"${l.name===n?' selected':''}>${n}</option>`).join('');
+    const inkOpts = INK_TYPES.map(([v,lb])=>`<option value="${v}"${l.inkMult==v?' selected':''}>${lb}</option>`).join('');
+    const custField = l.name==='Custom' ?
+      `<input type="text" placeholder="Nombre…" value="${l.customName}" style="margin-top:5px;" oninput="locChange(${l.id},'customName',this.value)">` : '';
+    return `<div class="lcard">
+      <div class="lcard-h">
+        <span class="lcard-n">Ubicación ${i+1}</span>
+        <span class="lcard-a">${area} sq in</span>
+        ${locs.length>1?`<button class="lcard-x" onclick="removeLoc(${l.id})">✕</button>`:'<span></span>'}
+      </div>
+      <div class="lcard-b">
+        <div class="lgrid">
+          <div class="f"><label>Ubicación</label><select onchange="locChange(${l.id},'name',this.value)">${opts}</select>${custField}</div>
+          <div class="f"><label>Colores</label><input type="number" value="${l.colors}" min="1" max="10" oninput="locChange(${l.id},'colors',this.value)"></div>
+          <div class="f"><label>Tipo tinta</label><select onchange="locChange(${l.id},'inkMult',this.value)">${inkOpts}</select></div>
+        </div>
+        <div class="lsrow" style="margin-top:8px;">
+          <span class="lslbl">Tamaño:</span>
+          <input type="number" value="${l.w}" min=".5" step=".5" style="width:60px;" oninput="locChange(${l.id},'w',this.value)">
+          <span class="lx">×</span>
+          <input type="number" value="${l.h}" min=".5" step=".5" style="width:60px;" oninput="locChange(${l.id},'h',this.value)">
+          <span class="lslbl">in</span>
+        </div>
+        <div class="sps">
+          <span class="sp" onclick="applySize(${l.id},4,4)">Pecho 4×4</span>
+          <span class="sp" onclick="applySize(${l.id},12,14)">Full front 12×14</span>
+          <span class="sp" onclick="applySize(${l.id},3,11)">Manga 3×11</span>
+          <span class="sp" onclick="applySize(${l.id},2.5,2)">Neck 2.5×2</span>
+          <span class="sp" onclick="applySize(${l.id},5,1.5)">Hem 5×1.5</span>
+        </div>
+        <div class="sbadge">${area} sq in · ${l.colors} color${l.colors>1?'es':''} · ${INK_TYPES.find(([v])=>l.inkMult==v)?.[1]||'Plastisol'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ════ HELPERS ════
+const gv = id => parseFloat(document.getElementById(id).value) || 0;
+const gch = id => document.getElementById(id).checked;
+const gs = id => document.getElementById(id).value;
+const fmt = n => '$' + Math.abs(n).toFixed(2);
+const fmtK = n => n>=1000 ? '$'+(n/1000).toFixed(1)+'k' : fmt(n);
+
+// ════ ADJUSTED SPEED (by color count and flash) ════
+function calcAdjustedSpeed(baseSpeed, totalColors, hasFlash, hasUnderbase) {
+  // Formula: base × (1 - 0.08 × (colors-1)) × (flash/underbase penalty)
+  let adj = baseSpeed * Math.pow(0.92, Math.max(0, totalColors-1));
+  if (hasFlash || hasUnderbase) adj *= 0.72;
+  return Math.max(10, Math.round(adj));
+}
+
+// ════ GARMENT TYPE MODIFIERS ════
+const GARMENT_MOD = {
+  tshirt:    {speedFactor:1.00, laborAdd:0.00},
+  longsleeve:{speedFactor:0.85, laborAdd:0.50},
+  hoodie:    {speedFactor:0.65, laborAdd:1.50},
+  crewneck:  {speedFactor:0.70, laborAdd:1.25},
+};
+
+// ════ MAIN CALC ════
+function calc() {
+  const e = EXP[expLevel];
+  const inkWaste = e.waste, spoilRate = e.spoil, testShirts = e.tests;
+  const garmentType = gs('garmentType');
+  const gMod = GARMENT_MOD[garmentType] || GARMENT_MOD.tshirt;
+
+  // ── Quantity + blended shirt cost ──
+  const szS=gv('sz_s'),szM=gv('sz_m'),szL=gv('sz_l'),szXL=gv('sz_xl');
+  const szXXL=gv('sz_xxl'),szXXXL=gv('sz_xxxl'),sz4xl=gv('sz_4xl'),sz5xl=gv('sz_5xl');
+  const qty = Math.max(1, szS+szM+szL+szXL+szXXL+szXXXL+sz4xl+sz5xl);
+
+  const csg = gch('csgOn');
+  const baseShirt = csg ? 0 : gv('shirtCost');
+  const u2=gv('up2xl'), u3=gv('up3xl'), u4=gv('up4xl'), u5=gv('up5xl');
+
+  // Blended cost accounting for each upcharge tier
+  const totalCostRaw = csg ? 0 :
+    baseShirt*(szS+szM+szL+szXL) +
+    (baseShirt+u2)*szXXL +
+    (baseShirt+u3)*szXXXL +
+    (baseShirt+u4)*sz4xl +
+    (baseShirt+u5)*sz5xl;
+  const blendedWholesale = csg ? 0 : totalCostRaw / qty;
+
+  // Garment markup → what customer pays per shirt
+  const garmentMarkup = csg ? 1.0 : gv('garmentMarkup');
+  const blendedRetail = blendedWholesale * garmentMarkup;
+
+  const csgSur = csg ? gv('csgSurcharge') : 0;
+
+  document.getElementById('qtyDisp').textContent = qty;
+  document.getElementById('blendDisp').textContent = csg ? 'Cliente trae camisas' : fmt(blendedWholesale) + ' wholesale → ' + fmt(blendedRetail) + ' cliente';
+
+  // ── Underbase ──
+  const undbaseOn = gch('undbaseOn');
+  if (undbaseOn) {
+    document.getElementById('undbaseInfo').style.display='block';
+  } else {
+    document.getElementById('undbaseInfo').style.display='none';
+  }
+
+  // ── Spoilage ──
+  const prodNeeded = Math.ceil(qty/(1-spoilRate));
+  const extraShirts = (prodNeeded - qty) + testShirts;
+  const buyTotal = qty + extraShirts;
+
+  document.getElementById('af-waste').textContent = '+'+Math.round(inkWaste*100)+'%';
+  document.getElementById('af-spoil').textContent = Math.round(spoilRate*100)+'%';
+  document.getElementById('af-tests').textContent = testShirts+' camisas';
+  document.getElementById('af-speed').textContent = EXP[expLevel].speed+' pzas/hr (1-color)';
+  document.getElementById('af-extra').textContent = extraShirts+' camisas';
+
+  // ── Screen cost ──
+  const halftoneOn = gch('halftoneOn');
+  const sc_em=gv('sc_em'), sc_film=gv('sc_film'), sc_burn=gv('sc_burn'), sc_rec=gv('sc_rec'), sc_fr=gv('sc_fr'), sc_labor=gv('sc_labor');
+  const scPerBase = sc_em+sc_film+sc_burn+sc_rec+sc_fr+sc_labor;
+  const scPerInternal = scPerBase + (halftoneOn ? 3.0 : 0); // +$3 for halftones
+  document.getElementById('scPerScr').textContent = fmt(scPerInternal);
+
+  let totalColors = locs.reduce((s,l) => s+l.colors, 0);
+  if (undbaseOn) totalColors += 1; // underbase = extra color
+
+  // 5-color warning
+  const maxColorsPerLocation = Math.max(...locs.map(l=>l.colors));
+  const colorWarnEl = document.getElementById('colorWarning');
+  colorWarnEl.style.display = maxColorsPerLocation > 5 ? 'block' : 'none';
+
+  document.getElementById('scSummary').textContent =
+    locs.map(l=>(l.name==='Custom'?l.customName||'Custom':l.name)+'('+l.colors+'c)').join(' + ') +
+    (undbaseOn ? ' + Underbase(1c)' : '') + ' = ' + totalColors + ' pantalla'+(totalColors!==1?'s':'');
+
+  const repeat = gch('repeatOn');
+  const screenFeeClient = repeat ? gv('screenFeeReorder') : gv('screenFeeClient');
+  const screensClientRevenue = totalColors * screenFeeClient; // What we CHARGE
+  const screensCostInternal = repeat ? 0 : (totalColors * scPerInternal); // What it COSTS us
+
+  const artFee = (repeat || !gch('artOn')) ? 0 : gv('artFee');
+  const halftoneArtAdd = (halftoneOn && !repeat) ? 30 : 0;
+  const totalArtFee = artFee + halftoneArtAdd;
+
+  const setupFee = gv('setupFee');
+  const pmsFee = gch('pmsOn') ? gv('pmsQty')*gv('pmsFee') : 0;
+  const shipFee = gv('shipFee');
+  const otherFix = gv('otherFix');
+  const spoilCost = extraShirts * (csg ? gv('csgSurcharge') : blendedWholesale);
+  const inkChangesCost = gch('inkChangeOn') ? gv('inkChanges')*gv('inkChangeFee') : 0;
+
+  const minOrder = gv('minOrder');
+  const smallFee = (qty < minOrder) ? gv('smallOrderFee') : 0;
+
+  // ── Adjusted speed ──
+  const hasFlash = gch('flashOn') || totalColors >= 2;
+  if (totalColors >= 2 && !gch('flashOn')) document.getElementById('flashOn').checked = true;
+  const baseSpeed = Math.max(1, gv('pressSpeed') || EXP[expLevel].speed);
+  const adjSpeed = calcAdjustedSpeed(baseSpeed * gMod.speedFactor, totalColors, hasFlash, undbaseOn);
+  document.getElementById('af-speed-adj').textContent = adjSpeed+' pzas/hr ('+totalColors+' colors'+( (hasFlash||undbaseOn)?', flash':'')+')'+(garmentType!=='tshirt'?' + '+garmentType:'');
+
+  // ── Setup time & breakdown ──
+  const setupTimeBase = gv('setupTimeBase');
+  const setupTimePerColor = gv('setupTimePerColor');
+  const breakdownTime = gv('breakdownTime');
+  const setupMinutes = setupTimeBase + (totalColors * setupTimePerColor) + (undbaseOn ? 10 : 0);
+  const runMinutes = (qty / adjSpeed) * 60;
+  const totalMinutes = setupMinutes + runMinutes + breakdownTime;
+  const totalHours = totalMinutes / 60;
+  const timeBadge = document.getElementById('timeBadge');
+  timeBadge.textContent = `⏱ Tiempo estimado del job: ${totalHours.toFixed(1)} hr (setup ${Math.round(setupMinutes)}min + run ${Math.round(runMinutes)}min + cleanup ${breakdownTime}min)`;
+
+  // ── Labor with burden ──
+  const laborBurden = gv('laborBurden') || 1.25;
+  const laborRealPerHr = gv('laborRate') * laborBurden;
+  const setupLaborCost = (setupMinutes/60) * laborRealPerHr;
+  const breakdownLaborCost = (breakdownTime/60) * laborRealPerHr;
+  const runLaborPerPiece = laborRealPerHr / adjSpeed;
+
+  // ── Ink per piece (adjusted for underbase extra tinta) ──
+  const inkSqIn = gv('inkSqIn');
+  let inkPerPiece = locs.reduce((s,l) => s + (inkSqIn * l.w * l.h * l.colors * l.inkMult * (1+inkWaste)), 0);
+  if (undbaseOn) {
+    // Underbase: full print area of largest loc, 1.35x multiplier (white ink)
+    const maxArea = Math.max(...locs.map(l=>l.w*l.h));
+    inkPerPiece += inkSqIn * maxArea * 1 * 1.35 * (1+inkWaste);
+  }
+
+  const flashPerPiece = gch('flashOn') ? gv('flashCost') : 0;
+  const curePerPiece = gv('cureCost');
+  const consumPerPiece = gv('palletCost') + gv('washCost') + gv('bagCost');
+  const garmentLaborAdd = gMod.laborAdd;
+
+  // ── Overhead ──
+  const overheadFixed = gv('overheadFixed');
+  const overheadPct = gv('overhead') / 100;
+
+  // ── Per-piece fixed costs ──
+  // Fixed costs = setup labor (1x per job / qty) + screen cost + art fee + etc.
+  const totalFixed = screensCostInternal + totalArtFee + setupFee +
+    pmsFee + shipFee + otherFix + spoilCost + inkChangesCost + smallFee +
+    setupLaborCost + breakdownLaborCost + overheadFixed;
+  const fixedPerUnit = totalFixed / qty;
+
+  // ── Production variable per piece ──
+  const prodVarPerPiece = inkPerPiece + runLaborPerPiece + flashPerPiece + curePerPiece + consumPerPiece + garmentLaborAdd;
+
+  // ── Subtotal COST (what it truly costs you, no margin yet) ──
+  // garment cost is wholesale; garment revenue (retail with markup) is separate
+  const costSubtotal = blendedWholesale + csgSur + fixedPerUnit + prodVarPerPiece;
+  const ohVariable = costSubtotal * overheadPct;
+  const costPerPiece = costSubtotal + ohVariable;
+
+  // personalization
+  const personCost = gch('personOn') ? (Math.min(gv('personQty'),qty)*gv('personFee'))/qty : 0;
+
+  // ── Margin on DECORATION (not on garment) ──
+  const marginPct = gv('marginSlider') / 100;
+  const decorationBase = fixedPerUnit + prodVarPerPiece + ohVariable + csgSur + personCost;
+  const decorationMargin = decorationBase * marginPct;
+
+  // ── Price to client ──
+  // Garment revenue = blendedRetail (already has markup)
+  // Decoration = decorationBase + margin
+  // Screens = screenFeeClient/qty (separate line, already has margin built in)
+  const screensPerPiece = screensClientRevenue / qty;
+  const preTaxPerPiece = blendedRetail + decorationBase + decorationMargin + screensPerPiece + personCost;
+
+  // Rush on full job (not just production)
+  const rushSurchargePerPiece = preTaxPerPiece * turnaroundRate;
+  const preTaxWithRush = preTaxPerPiece + rushSurchargePerPiece;
+
+  // Tax
+  const taxRate = (gch('taxOn') && !gch('taxExemptOn')) ? 0.0975 : 0; // 9.75% updated 2026
+  const taxPerPiece = preTaxWithRush * taxRate;
+
+  // CC fee
+  const ccFeeRate = gch('ccFeeOn') ? 0.029 : 0;
+  const ccFeePerPiece = preTaxWithRush * ccFeeRate + (gch('ccFeeOn') ? 0.30/qty : 0);
+
+  const pricePerPiece = preTaxWithRush + taxPerPiece + ccFeePerPiece;
+
+  const totalJob = pricePerPiece * qty;
+  const grossProfit = (decorationMargin + (blendedRetail - blendedWholesale) + screensPerPiece - (screensCostInternal/qty)) * qty;
+  const netProfit = grossProfit - (ccFeePerPiece * qty);
+
+  // ── Update UI ──
+  document.getElementById('r-unit').textContent = fmt(pricePerPiece);
+  document.getElementById('r-sub').textContent = fmtK(totalJob) + ' total · ' + qty + ' piezas';
+  document.getElementById('r-total').textContent = fmtK(totalJob);
+  document.getElementById('r-profit').textContent = fmtK(grossProfit);
+  document.getElementById('r-cost').textContent = fmt(costPerPiece);
+  document.getElementById('r-screens').textContent = repeat ? '0 (reorden)' : totalColors;
+  document.getElementById('r-extra').textContent = csg ? '—' : extraShirts;
+  document.getElementById('r-buy').textContent = csg ? '—' : buyTotal;
+  document.getElementById('r-final').textContent = fmt(pricePerPiece);
+
+  // Profit analysis
+  document.getElementById('pr-revenue').textContent = fmtK(totalJob);
+  const directCosts = (blendedWholesale + csgSur + fixedPerUnit + prodVarPerPiece) * qty;
+  document.getElementById('pr-direct').textContent = fmtK(directCosts);
+  document.getElementById('pr-gross').textContent = fmtK(grossProfit);
+  const ccTotal = ccFeePerPiece * qty;
+  document.getElementById('pr-cc').textContent = gch('ccFeeOn') ? '-'+fmt(ccTotal) : '$0.00';
+  document.getElementById('pr-net').textContent = fmtK(netProfit);
+
+  // Deposit
+  if (gch('depositOn')) {
+    const dep = totalJob * 0.50;
+    document.getElementById('depositDisp').style.display='block';
+    document.getElementById('depositDisp').innerHTML = `💳 Depósito (50%): <strong>${fmt(dep)}</strong> — Balance al recoger: <strong>${fmt(totalJob-dep)}</strong>`;
+  } else {
+    document.getElementById('depositDisp').style.display='none';
+  }
+
+  const cn = document.getElementById('clientName').value.trim();
+  document.getElementById('qClientDisp').textContent = cn ? 'Para: '+cn : '';
+
+  // ── Breakdown ──
+  const div = lbl => `<div style="font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ocean);padding:7px 0 3px;margin-top:3px;border-top:1px solid var(--ob);">${lbl}</div>`;
+  const row = (lbl,val,cls='') => `<div class="bkr"><span class="bkl">${lbl}</span><span class="bkv ${cls}">${fmt(val)}</span></div>`;
+  let bk='';
+  bk += div('Prenda (precio a cliente)');
+  if (csg) {
+    bk += row('Prenda del cliente ($0 costo)',0);
+    bk += row('Recargo CSG',csgSur,'w');
+  } else {
+    bk += row('Prenda blended wholesale',blendedWholesale);
+    bk += row('Markup prenda ('+garmentMarkup.toFixed(2)+'× → cliente)',blendedRetail-blendedWholesale,'g');
+  }
+  bk += div('Costos del trabajo ÷ '+qty+' piezas');
+  bk += `<div style="font-size:.64rem;color:var(--muted);padding:2px 0 5px;">Costos fijos prorrateados. Más piezas = menor costo/pieza.</div>`;
+  if (repeat) {
+    bk += `<div class="bkr"><span class="bkl">Pantallas (reorden)</span><span class="bkv g">$0.00</span></div>`;
+    bk += `<div class="bkr"><span class="bkl">Fee al cliente pantallas</span><span class="bkv" style="color:var(--ocean);">${fmt(screensClientRevenue/qty)}</span></div>`;
+  } else {
+    bk += row('Costo interno pantallas ('+totalColors+')',screensCostInternal/qty);
+    bk += row('Fee pantallas al cliente ('+totalColors+'×'+fmt(screenFeeClient)+')',screensClientRevenue/qty,'b');
+  }
+  if (undbaseOn) bk += `<div class="bkr"><span class="bkl">Underbase</span><span class="bkv w">incluido en pantallas</span></div>`;
+  bk += row('Setup/calibración prensa',setupFee/qty);
+  bk += row('Setup labor ('+Math.round(setupMinutes)+'min)',setupLaborCost/qty);
+  bk += row('Breakdown/cleanup labor',(breakdownLaborCost)/qty);
+  if (totalArtFee>0) bk += row('Art fee'+(halftoneOn?' + halftone':''),totalArtFee/qty);
+  if (pmsFee>0) bk += row('Mezcla PMS ('+gv('pmsQty')+' col)',pmsFee/qty);
+  if (!csg) bk += row('Prendas extra — misprints ('+extraShirts+')',spoilCost/qty);
+  if (gch('inkChangeOn')) bk += row('Cambios de color',inkChangesCost/qty);
+  if (smallFee>0) bk += row('Recargo pedido pequeño',smallFee/qty,'w');
+  if (shipFee>0) bk += row('Envío',shipFee/qty);
+  if (otherFix>0) bk += row('Otros fijos',otherFix/qty);
+  bk += div('Producción — por pieza');
+  bk += row('Tinta ('+locs.length+' ubicación'+(locs.length>1?'es':'')+(undbaseOn?' + underbase':'')+')',inkPerPiece);
+  bk += row('Labor run ($'+laborRealPerHr.toFixed(0)+'/hr real · '+adjSpeed+' pzas/hr)',runLaborPerPiece);
+  if (garmentLaborAdd>0) bk += row('Recargo '+garmentType,garmentLaborAdd,'w');
+  if (gch('flashOn')) bk += row('Flash cure',flashPerPiece);
+  bk += row('Secado + consumibles',curePerPiece+consumPerPiece);
+  bk += div('Overhead y margen');
+  bk += row('Overhead fijo',overheadFixed/qty);
+  bk += row('Overhead variable ('+gv('overhead')+'%)',ohVariable);
+  bk += row('Margen decoración ('+gv('marginSlider')+'%)',decorationMargin,'g');
+  if (turnaroundRate>0) bk += row('Rush (+'+(turnaroundRate*100).toFixed(0)+'% sobre job)',rushSurchargePerPiece,'w');
+  if (gch('personOn')) bk += row('Personalización ('+gs('personMethod')+')',personCost,'s');
+  if (taxRate>0) bk += row('Sales Tax Jefferson Parish (9.75%)',taxPerPiece,'b');
+  if (gch('ccFeeOn')) bk += row('CC processing fee',ccFeePerPiece,'w');
+  document.getElementById('bkRows').innerHTML = bk;
+
+  // ── Alerts ──
+  const alerts = [];
+  if (qty < minOrder) alerts.push({t:'w',m:'⚠ '+qty+' piezas por debajo del mínimo de '+minOrder+'. Recargo de $'+smallFee.toFixed(2)+' aplicado.'});
+  if (expLevel==='beginner' && totalColors>=4) alerts.push({t:'w',m:'⚠ 4+ colores con operador principiante — registro en prensa manual va a ser difícil.'});
+  if (gv('marginSlider')<25) alerts.push({t:'w',m:'⚠ Margen menor al 25% — queda poco espacio para imprevistos.'});
+  if (locs.some(l=>l.w*l.h>200)) alerts.push({t:'w',m:'⚠ Un print parece muy grande — verifica dimensiones.'});
+  if (repeat && gch('artOn')) alerts.push({t:'w',m:'⚠ Reorden activo + art fee activo. En reorden el arte ya debería estar listo.'});
+  if (gs('shirtTone')==='dark' && !undbaseOn) alerts.push({t:'d',m:'⚠ Camisa oscura sin underbase activo. ¿Olvidaste activarlo en Tab ③?'});
+  if (csg && qty < gv('csgMin')) alerts.push({t:'w',m:'⚠ CSG con menos de '+gv('csgMin')+' piezas — considera rechazar o subir recargo.'});
+  if (locs.some(l=>l.inkMult>=1.6 && !l.inkMult==1.6) || locs.some(l=>l.inkMult>=1.6)) {
+    const wbLoc = locs.find(l=>l.inkMult>=1.6);
+    if (wbLoc && expLevel==='beginner') alerts.push({t:'w',m:'⚠ Water-based / specialty ink con operador principiante — requiere experiencia intermedia mínima.'});
+  }
+  document.getElementById('alertsBox').innerHTML = alerts.map(a=>`<div class="alert ${a.t}">${a.m}</div>`).join('');
+
+  // ── Volume tiers ──
+  renderTiers(blendedWholesale, blendedRetail, garmentMarkup, csg, csgSur, inkWaste, spoilRate, testShirts,
+    adjSpeed, scPerInternal, totalColors, repeat, screenFeeClient, totalArtFee,
+    setupFee, pmsFee, shipFee, otherFix, inkChangesCost, smallFee, setupLaborCost, breakdownLaborCost, overheadFixed, undbaseOn, gMod);
+}
+
+function renderTiers(blendedWholesale, blendedRetail, garmentMarkup, csg, csgSur, inkWaste, spoilRate, testShirts,
+    adjSpeed, scPerInternal, totalColors, repeat, screenFeeClient, totalArtFee,
+    setupFee, pmsFee, shipFee, otherFix, inkChangesCost, smallFee, setupLaborCost, breakdownLaborCost, overheadFixed, undbaseOn, gMod) {
+  const qtys = [12,24,36,48,72,96,144,250,500,1000];
+  const inkSqIn = gv('inkSqIn');
+  const rushMult = 1 + turnaroundRate;
+  const minO = gv('minOrder');
+  const marginPct = gv('marginSlider')/100;
+  const laborRealPerHr = gv('laborRate') * (gv('laborBurden')||1.25);
+  const overheadPct = gv('overhead')/100;
+  const taxRate = (gch('taxOn') && !gch('taxExemptOn')) ? 0.0975 : 0;
+  const ccFeeRate = gch('ccFeeOn') ? 0.029 : 0;
+
+  function at(q) {
+    const extra = (Math.ceil(q/(1-spoilRate))-q)+testShirts;
+    const spoilC = extra * (csg ? csgSur : blendedWholesale);
+    const sf = q < minO ? gv('smallOrderFee') : 0;
+    const screenFee = repeat ? gv('screenFeeReorder') : screenFeeClient;
+    const screensRev = totalColors * screenFee;
+    const screensCostIntern = repeat ? 0 : (totalColors * scPerInternal);
+    const fixedTotal = screensCostIntern + totalArtFee + setupFee + pmsFee + shipFee + otherFix + spoilC + inkChangesCost + sf + setupLaborCost + breakdownLaborCost + overheadFixed;
+    const fixedPU = fixedTotal / q;
+    const inkPU = locs.reduce((s,l) => s+(inkSqIn*l.w*l.h*l.colors*l.inkMult*(1+inkWaste)),0) + (undbaseOn ? inkSqIn*Math.max(...locs.map(l=>l.w*l.h))*1.35*(1+inkWaste):0);
+    const laborPU = laborRealPerHr / adjSpeed;
+    const flashPU = gch('flashOn') ? gv('flashCost') : 0;
+    const curePU = gv('cureCost');
+    const consumPU = gv('palletCost')+gv('washCost')+gv('bagCost');
+    const garmentLaborAdd = gMod.laborAdd;
+    const prodVarPU = inkPU + laborPU + flashPU + curePU + consumPU + garmentLaborAdd;
+    const costSub = blendedWholesale + csgSur + fixedPU + prodVarPU;
+    const ohV = costSub * overheadPct;
+    const decorBase = fixedPU + prodVarPU + ohV + csgSur;
+    const decorMargin = decorBase * marginPct;
+    const screensPerPU = screensRev / q;
+    const preTax = blendedRetail + decorBase + decorMargin + screensPerPU;
+    const rush = preTax * (gch('taxOn') ? 0 : 0);
+    const withRush = preTax * (1 + turnaroundRate);
+    const tax = withRush * taxRate;
+    const cc = withRush * ccFeeRate;
+    return withRush + tax + cc;
+  }
+
+  const prices = qtys.map(q=>({q,p:at(q)}));
+  const maxP = Math.max(...prices.map(x=>x.p));
+  const curQ = gv('sz_s')+gv('sz_m')+gv('sz_l')+gv('sz_xl')+gv('sz_xxl')+gv('sz_xxxl')+gv('sz_4xl')+gv('sz_5xl') || 1;
+  const closest = qtys.reduce((a,b)=>Math.abs(b-curQ)<Math.abs(a-curQ)?b:a);
+  document.getElementById('volumeTiers').innerHTML = prices.map(({q,p})=>{
+    const pct = Math.round((p/maxP)*100);
+    const act = q===closest;
+    return `<div class="tier"><span class="tq">${q>=1000?'1k':q} pzas</span>
+    <div class="tbw"><div class="tbar" style="width:${pct}%"></div></div>
+    <span class="tp ${act?'ton':''}">${fmt(p)}</span></div>`;
+  }).join('');
+}
+
+// ════ QUOTE TEXT ════
+function buildQuoteText() {
+  const qty = document.getElementById('qtyDisp').textContent;
+  const unit = document.getElementById('r-unit').textContent;
+  const total = document.getElementById('r-total').textContent;
+  const profit = document.getElementById('r-profit').textContent;
+  const screens = document.getElementById('r-screens').textContent;
+  const extra = document.getElementById('r-extra').textContent;
+  const buy = document.getElementById('r-buy').textContent;
+  const cn = document.getElementById('clientName').value.trim();
+  const qn = document.getElementById('quoteNum').textContent;
+  const expiry = document.getElementById('quoteExpiry').value;
+  const mPolicy = document.getElementById('misprintPolicy').value;
+  const mText = mPolicy!=='none' ? document.getElementById('misprintText').value : '';
+  const tnEl = document.querySelector('.tntag.on');
+  const tnLabel = tnEl ? tnEl.querySelector('.tn-name').textContent+' ('+tnEl.querySelector('.tn-days').textContent+')' : 'Estándar';
+  const repeat = gch('repeatOn');
+  const csg = gch('csgOn');
+  const taxExempt = gch('taxExemptOn');
+  const taxExemptCert = document.getElementById('taxExemptCert').value.trim();
+
+  const locSummary = locs.map(l=>{
+    const n = l.name==='Custom' ? (l.customName||'Custom') : l.name;
+    const inkName = INK_TYPES.find(([v])=>l.inkMult==v)?.[1]||'Plastisol';
+    return `  - ${n}: ${l.w}" × ${l.h}" | ${l.colors} color${l.colors>1?'es':''} | ${inkName}`;
+  }).join('\n');
+
+  let t = `OVPL — PRINT QUOTE v5\n${'-'.repeat(40)}\n`;
+  t += `# Quote: ${qn}\n`;
+  if (cn) t += `Cliente: ${cn}\n`;
+  t += `Fecha: ${new Date().toLocaleDateString('es-US')}\n`;
+  if (expiry) t += `Válido hasta: ${new Date(expiry+'T12:00:00').toLocaleDateString('es-US')}\n`;
+  t += `\n`;
+  t += `Cantidad: ${qty} piezas\n`;
+  t += `Tipo de prenda: ${gs('garmentType')}\n`;
+  if (csg) t += `⚠ NOTA: Cliente suministra sus propias prendas — waiver firmado requerido.\n`;
+  if (repeat) t += `Tipo: Reorden (pantallas en archivo, &lt;12 meses)\n`;
+  t += `Turnaround: ${tnLabel}\n`;
+  if (!csg) t += `Prendas extra a comprar (spoilage + tests): ${extra}\n`;
+  if (!csg) t += `Total a comprar en SS&A: ${buy}\n`;
+  t += `\nUbicaciones de print:\n${locSummary}\n`;
+  if (gch('undbaseOn')) t += `Underbase blanco: SÍ (requerido por tono oscuro)\n`;
+  t += `Pantallas totales: ${screens}\n`;
+  if (gch('inkChangeOn')) t += `Cambios de color: ${gv('inkChanges')}\n`;
+  if (gch('personOn')) t += `Personalización (${gs('personMethod')}): ${gv('personQty')} piezas\n`;
+  t += `\n${'-'.repeat(40)}\n`;
+  t += `Precio por pieza: ${unit}\n`;
+  t += `Total del trabajo: ${total}\n`;
+  t += `Tu ganancia bruta estimada: ${profit}\n`;
+  if (taxExempt) {
+    t += `Impuesto: EXENTO — ${taxExemptCert||'Certificado en archivo'}\n`;
+  } else if (gch('taxOn')) {
+    t += `Incluye Sales Tax Jefferson Parish 9.75%\n`;
+  }
+  if (gch('depositOn')) {
+    const totalNum = parseFloat(document.getElementById('r-total').textContent.replace(/[$k]/g,''))*( document.getElementById('r-total').textContent.includes('k') ? 1000 : 1);
+    t += `\n💳 Depósito requerido (50%): $${(totalNum*0.50).toFixed(2)}\n`;
+    t += `Balance al recoger: $${(totalNum*0.50).toFixed(2)}\n`;
+  }
+  t += `\n${'-'.repeat(40)}\n`;
+  if (mText) t += `Política de misprints:\n${mText}\n\n`;
+  t += `OVPL — Kenner, Louisiana\n${qn}\n`;
+  t += `Precios sujetos a cambio. Quote válido 30 días.`;
+  return t;
+}
+
+// ════ MODAL ════
+function closeModal() { document.getElementById('exportModal').style.display='none'; }
+function showCopyModal() {
+  const text = buildQuoteText();
+  document.getElementById('modalTitle').textContent = 'Copiar Quote';
+  document.getElementById('modalBody').innerHTML =
+    `<p style="font-size:.78rem;color:var(--muted);margin-bottom:10px;">Texto del quote — copia o usa el botón.</p>` +
+    `<textarea class="qta" id="qta" readonly>${text}</textarea>`;
+  document.getElementById('modalFoot').innerHTML =
+    `<button class="mabtn ap" id="copyBtn" onclick="doCopy('qta','copyBtn')">Copiar texto</button>` +
+    `<button class="mabtn as" onclick="closeModal()">Cerrar</button>`;
+  document.getElementById('exportModal').style.display='flex';
+  setTimeout(()=>{const ta=document.getElementById('qta');ta.focus();ta.select();},100);
+}
+function showPrintModal() {
+  const text = buildQuoteText();
+  document.getElementById('modalTitle').textContent = 'Guardar / Imprimir';
+  document.getElementById('modalBody').innerHTML =
+    `<div class="ibox blue" style="margin-bottom:14px;">
+      <strong>Para guardar como PDF:</strong><br>
+      Presiona <kbd>Ctrl+P</kbd> (Windows) o <kbd>Cmd+P</kbd> (Mac)<br>
+      → Cambia impresora a <strong>"Save as PDF"</strong>
+    </div>
+    <p style="font-size:.78rem;color:var(--muted);margin-bottom:10px;">O copia el texto del quote:</p>
+    <textarea class="qta" id="qta2" readonly>${text}</textarea>`;
+  document.getElementById('modalFoot').innerHTML =
+    `<button class="mabtn ap" id="copyBtn2" onclick="doCopy('qta2','copyBtn2')">Copiar texto</button>` +
+    `<button class="mabtn as" onclick="closeModal()">Cerrar</button>`;
+  document.getElementById('exportModal').style.display='flex';
+}
+function doCopy(taId,btnId) {
+  const ta=document.getElementById(taId); ta.select();
+  let ok=false;
+  try{ok=document.execCommand('copy');}catch(e){}
+  if (!ok && navigator.clipboard) navigator.clipboard.writeText(ta.value).catch(()=>{});
+  const btn=document.getElementById(btnId);
+  btn.textContent='✓ Copiado!';
+  setTimeout(()=>btn.textContent='Copiar texto',2200);
+}
+
+// ════ INIT ════
+document.getElementById('flashOn').checked = true;
+document.getElementById('undbaseOn').addEventListener('change', calc);
+initQuoteNum();
+initExpiry();
+renderLocs();
+applyMisprintPolicy();
+calc();
+// Check SS&A connection on load
+initSSA();
+</script>
+</body>
+</html>
