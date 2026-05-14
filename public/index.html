@@ -217,14 +217,38 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
 .inv-header{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;background:var(--bg4);border-bottom:1px solid var(--gb);}
 .inv-title{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
 .inv-updated{font-size:.58rem;color:var(--muted);}
-.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:1px;background:var(--gb);}
-.inv-cell{background:var(--bg3);padding:7px 6px;text-align:center;}
-.inv-size{font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
-.inv-qty{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:900;}
+.inv-wh{border-bottom:1px solid var(--gb);}
+.inv-wh:last-child{border-bottom:none;}
+.inv-wh-header{display:flex;align-items:center;gap:8px;padding:6px 11px;background:var(--bg4);}
+.inv-wh-badge{font-family:'Barlow Condensed',sans-serif;font-size:.72rem;font-weight:900;padding:2px 7px;border-radius:2px;flex-shrink:0;}
+.inv-wh-badge.near{background:rgba(34,214,138,.15);color:var(--green);border:1px solid rgba(34,214,138,.3);}
+.inv-wh-badge.mid{background:rgba(245,166,35,.12);color:var(--warn);border:1px solid rgba(245,166,35,.3);}
+.inv-wh-badge.far{background:var(--gd);color:var(--muted);border:1px solid var(--gb);}
+.inv-wh-label{font-size:.68rem;color:var(--white);}
+.inv-wh-days{font-size:.6rem;color:var(--muted);margin-left:auto;}
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(62px,1fr));gap:1px;background:var(--gb);padding:1px;}
+.inv-cell{background:var(--bg3);padding:6px 5px;text-align:center;}
+.inv-size{font-size:.55rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;}
+.inv-qty{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:900;}
 .inv-qty.high{color:var(--green);}
 .inv-qty.low{color:var(--warn);}
-.inv-qty.out{color:var(--danger);}
+.inv-qty.out{color:var(--danger);font-size:.7rem;}
 .inv-loading{padding:12px;text-align:center;font-size:.72rem;color:var(--muted);}
+/* Shipping panel */
+.ship-panel{margin-top:10px;background:var(--bg3);border:1px solid var(--gb);border-radius:4px;padding:10px 12px;}
+.ship-title{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.ship-opts{display:flex;flex-direction:column;gap:6px;}
+.ship-opt{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--gb);border-radius:3px;cursor:pointer;transition:all .15s;}
+.ship-opt:hover,.ship-opt.on{border-color:var(--ocean);background:var(--od);}
+.ship-opt input[type=radio]{accent-color:var(--ocean);}
+.ship-opt-label{font-size:.82rem;font-weight:600;color:var(--white);flex:1;}
+.ship-opt-detail{font-size:.65rem;color:var(--muted);}
+.ship-estimate{margin-top:8px;padding:8px 10px;background:var(--od);border:1px solid var(--ob);border-radius:3px;font-size:.75rem;}
+/* Color image viewer */
+.color-images{display:flex;gap:6px;margin-top:8px;}
+.color-img-thumb{width:52px;height:52px;object-fit:cover;border-radius:3px;border:2px solid transparent;cursor:pointer;transition:all .15s;}
+.color-img-thumb:hover,.color-img-thumb.on{border-color:var(--ocean);}
+.color-img-main{width:100%;max-height:200px;object-fit:contain;border-radius:4px;border:1px solid var(--gb);margin-top:6px;cursor:zoom-in;}
 .garment-banner{display:flex;align-items:center;gap:10px;padding:8px 11px;background:var(--bg3);border:1px solid var(--gb);border-radius:4px;margin-bottom:9px;}
 .garment-banner img{width:48px;height:48px;object-fit:cover;border-radius:3px;border:1px solid var(--gb);cursor:zoom-in;transition:opacity .15s;flex-shrink:0;}
 .garment-banner img:hover{opacity:.8;}
@@ -289,23 +313,67 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
   <div id="colorSection" style="display:none;" class="sec">
     <div class="slbl">Color</div>
     <div id="colorSwatches" class="color-swatches"></div>
+
+    <!-- Selected color info -->
     <div id="colorSelectedBox" class="color-selected" style="display:none;">
       <div class="color-chip" id="colorChip"></div>
       <span id="colorSelectedName" style="font-weight:600;"></span>
       <span id="colorStockBadge" style="font-size:.62rem;margin-left:auto;"></span>
     </div>
-    <div id="undbaseWarn" style="display:none;margin-top:7px;" class="ibox warn"></div>
 
-    <!-- Inventory panel — shown after color selection -->
-    <div id="invPanel" class="inv-panel" style="display:none;">
-      <div class="inv-header">
-        <span class="inv-title">📦 Stock en tiempo real — <span id="invColorLabel" style="color:var(--white);"></span></span>
-        <span class="inv-updated" id="invUpdated"></span>
-      </div>
-      <div id="invGrid" class="inv-grid"></div>
+    <!-- Color image viewer (front / back / model) -->
+    <div id="colorImageViewer" style="display:none;margin-top:8px;">
+      <div class="color-images" id="colorImageThumbs"></div>
+      <img id="colorImageMain" class="color-img-main" src="" alt=""
+        onclick="openLightbox(this.src, document.getElementById('colorSelectedName').textContent)">
     </div>
 
-    <!-- Manual fallback -->
+    <div id="undbaseWarn" style="display:none;margin-top:7px;" class="ibox warn"></div>
+
+    <!-- Inventory by warehouse -->
+    <div id="invPanel" class="inv-panel" style="display:none;">
+      <div class="inv-header">
+        <span class="inv-title">📦 Stock — <span id="invColorLabel"></span></span>
+        <span class="inv-updated" id="invUpdated"></span>
+      </div>
+      <div id="invGrid"></div>
+    </div>
+
+    <!-- Shipping estimator -->
+    <div id="shipPanel" class="ship-panel" style="display:none;">
+      <div class="ship-title">🚚 Entrega</div>
+      <div class="ship-opts">
+        <label class="ship-opt on" id="shipOptPickup">
+          <input type="radio" name="shipMethod" value="pickup" checked onchange="applyShipMethod('pickup')">
+          <div>
+            <div class="ship-opt-label">Pickup en shop</div>
+            <div class="ship-opt-detail">Sin costo de envío</div>
+          </div>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:900;color:var(--green);">$0.00</span>
+        </label>
+        <label class="ship-opt" id="shipOptGround">
+          <input type="radio" name="shipMethod" value="ground" onchange="applyShipMethod('ground')">
+          <div>
+            <div class="ship-opt-label">UPS Ground desde <span id="shipFromWh">—</span></div>
+            <div class="ship-opt-detail" id="shipGroundDetail">Calculando…</div>
+          </div>
+          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:900;color:var(--ocean);" id="shipGroundCost">—</span>
+        </label>
+        <label class="ship-opt" id="shipOptCustom">
+          <input type="radio" name="shipMethod" value="custom" onchange="applyShipMethod('custom')">
+          <div style="flex:1;">
+            <div class="ship-opt-label">Otro / cotización manual</div>
+            <input type="number" id="shipCustomCost" value="0" min="0" step="5"
+              style="margin-top:5px;width:120px;font-size:.82rem;padding:5px 8px;"
+              onclick="event.stopPropagation()"
+              oninput="applyShipMethod('custom')">
+          </div>
+        </label>
+      </div>
+      <div id="shipEstimate" class="ship-estimate" style="display:none;"></div>
+    </div>
+
+    <!-- Manual color fallback (SSA not connected) -->
     <div id="colorManualFallback" style="display:none;margin-top:6px;">
       <input type="text" id="shirtColorManual" placeholder="Escribe el color manualmente…" oninput="setManualColor(this.value)">
     </div>
@@ -1074,7 +1142,8 @@ let ssaGarmentName     = '';
 let ssaDetectedType    = '';
 let ssaColors          = [];
 let ssaCurrentStyleID  = null;
-let ssaInventoryCache  = null; // cached inventory for current style
+let ssaInventoryCache  = null;
+let ssaAvgWeightLbs    = null; // for shipping estimate
 
 // ════ EXPERIENCE TABLE (velocidad base para 1 color) ════
 const EXP = {
@@ -1204,10 +1273,12 @@ async function loadStylePrices(styleID, encodedCat, encodedTitle) {
     const x4   = data.prices.find(p => p.sizePriceCodeName === '4XL' || p.sizeName === '4XL');
     const x5   = data.prices.find(p => p.sizePriceCodeName === '5XL' || p.sizeName === '5XL');
 
-    // Store styleID for inventory lookup and reset cache
+    // Store styleID, reset caches
     ssaCurrentStyleID = styleID;
     ssaInventoryCache = null;
+    ssaAvgWeightLbs   = data.avgWeightLbs || null;
     document.getElementById('invPanel').style.display = 'none';
+    document.getElementById('shipPanel').style.display = 'none';
 
     if (sxl) {
       document.getElementById('shirtCost').value = sxl.customerPrice.toFixed(2);
@@ -1240,20 +1311,23 @@ async function loadStylePrices(styleID, encodedCat, encodedTitle) {
       if (colors.length > 0) {
         const swatchContainer = document.getElementById('colorSwatches');
         swatchContainer.innerHTML = colors.map(c => {
-          const oos = !c.inStock ? ' oos' : '';
-          const title = c.colorName + (c.inStock ? '' : ' (out of stock)');
-          const frontImg = c.frontImage || '';
-          const swatchSrc = c.swatchImage || '';
+          const oos      = !c.inStock ? ' oos' : '';
+          const title    = c.colorName + (c.inStock ? '' : ' (sin stock)');
+          const frontImg = c.frontImage  || '';
+          const backImg  = c.backImage   || '';
+          const modelImg = c.modelImage  || '';
+          const swatchSrc= c.swatchImage || '';
           const hoverFns = frontImg
             ? `onmouseenter="previewColor('${frontImg}','${c.colorName.replace(/'/g,"\\'")}')" onmouseleave="resetPreview()"`
             : '';
+          const clickFn = `selectSSAColor('${c.colorName.replace(/'/g,"\\'")}','${swatchSrc}',${c.inStock},'${frontImg}','${backImg}','${modelImg}')`;
           if (swatchSrc) {
-            return `<div class="csw${oos}" title="${title}" ${hoverFns} onclick="selectSSAColor('${c.colorName.replace(/'/g,"\\'")}','${swatchSrc}',${c.inStock},'${frontImg}')">
+            return `<div class="csw${oos}" title="${title}" ${hoverFns} onclick="${clickFn}">
               <img class="csw-img" src="${swatchSrc}" alt="${c.colorName}" onerror="this.parentNode.style.background='#555';this.remove()">
             </div>`;
           } else {
             const bg = colorNameToHex(c.colorName);
-            return `<div class="csw${oos}" title="${title}" style="background:${bg};" ${hoverFns} onclick="selectSSAColor('${c.colorName.replace(/'/g,"\\'")}','',${c.inStock},'${frontImg}')"></div>`;
+            return `<div class="csw${oos}" title="${title}" style="background:${bg};" ${hoverFns} onclick="${clickFn}"></div>`;
           }
         }).join('');
       }
@@ -1383,21 +1457,35 @@ function toggleGarmentTypeOverride() {
   if (open) disp.style.display = 'flex'; else disp.style.display = 'none';
 }
 
-// ════ INVENTORY ════
+// ════ INVENTORY + SHIPPING ════
+
+const WAREHOUSE_PROXIMITY = {
+  GPT: { label: 'Gulfport, MS',     days: '1 día',    priority: 1 },
+  FTW: { label: 'Fort Worth, TX',   days: '1–2 días', priority: 2 },
+  ATL: { label: 'Atlanta, GA',      days: '2 días',   priority: 3 },
+  LAX: { label: 'Los Angeles, CA',  days: '3–4 días', priority: 4 },
+  INP: { label: 'Indianapolis, IN', days: '3 días',   priority: 5 },
+  SAV: { label: 'Savannah, GA',     days: '2–3 días', priority: 6 },
+  HAZ: { label: 'Hazleton, PA',     days: '3–4 días', priority: 7 },
+};
+
+// UPS Ground rates from Kenner LA — approximate $/lb by warehouse proximity
+const UPS_RATE_BY_PRIORITY = { 1: 0.45, 2: 0.55, 3: 0.60, 4: 0.85, 5: 0.70, 6: 0.65, 7: 0.80 };
+const UPS_MIN_CHARGE = 8.50; // minimum per shipment
+
 async function fetchInventory(colorName) {
   if (!ssaCurrentStyleID) return;
 
-  const panel = document.getElementById('invPanel');
-  const grid  = document.getElementById('invGrid');
-  const lbl   = document.getElementById('invColorLabel');
-  const upd   = document.getElementById('invUpdated');
+  const panel  = document.getElementById('invPanel');
+  const grid   = document.getElementById('invGrid');
+  const lbl    = document.getElementById('invColorLabel');
+  const upd    = document.getElementById('invUpdated');
 
   panel.style.display = 'block';
   lbl.textContent = colorName;
   grid.innerHTML = '<div class="inv-loading">Cargando inventario…</div>';
 
   try {
-    // Use cache if same style
     if (!ssaInventoryCache) {
       const r = await fetch('/api/ssa-inventory?styleid=' + ssaCurrentStyleID);
       if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -1405,34 +1493,118 @@ async function fetchInventory(colorName) {
       ssaInventoryCache = data.inventory || {};
     }
 
-    const colorData = ssaInventoryCache[colorName] || {};
-    const sizes = ['XS','S','M','L','XL','2XL','3XL','4XL','5XL'];
-    const available = sizes.filter(sz => colorData[sz] !== undefined);
-
-    if (available.length === 0) {
-      grid.innerHTML = '<div class="inv-loading" style="color:var(--warn);">Sin datos de inventario para este color</div>';
-      upd.textContent = '';
+    const whList = ssaInventoryCache[colorName];
+    if (!whList || whList.length === 0) {
+      grid.innerHTML = '<div class="inv-loading" style="color:var(--warn);">Sin datos para este color</div>';
       return;
     }
 
-    // Render size cells with color-coded quantity
-    grid.innerHTML = available.map(sz => {
-      const qty = colorData[sz] ?? 0;
-      const cls = qty > 100 ? 'high' : qty > 0 ? 'low' : 'out';
-      const label = qty > 999 ? '999+' : qty === 0 ? '✕' : qty;
-      return `<div class="inv-cell">
-        <div class="inv-size">${sz}</div>
-        <div class="inv-qty ${cls}">${label}</div>
+    const SIZES = ['XS','S','M','L','XL','2XL','3XL','4XL','5XL'];
+
+    grid.innerHTML = whList.map(wh => {
+      const pr = wh.priority || 99;
+      const badgeCls = pr <= 2 ? 'near' : pr <= 4 ? 'mid' : 'far';
+      const sizeCells = SIZES
+        .filter(sz => wh.sizes[sz] !== undefined)
+        .map(sz => {
+          const qty = wh.sizes[sz] || 0;
+          const cls = qty > 100 ? 'high' : qty > 0 ? 'low' : 'out';
+          const lbl = qty > 999 ? '999+' : qty === 0 ? '✕' : qty;
+          return `<div class="inv-cell"><div class="inv-size">${sz}</div><div class="inv-qty ${cls}">${lbl}</div></div>`;
+        }).join('');
+
+      return `<div class="inv-wh">
+        <div class="inv-wh-header">
+          <span class="inv-wh-badge ${badgeCls}">${wh.abbr}</span>
+          <span class="inv-wh-label">${wh.label}</span>
+          <span class="inv-wh-days">${wh.days}</span>
+        </div>
+        <div class="inv-grid">${sizeCells}</div>
       </div>`;
     }).join('');
 
-    // SS&A updates inventory every 15 min
     const now = new Date();
-    upd.textContent = `Actualizado ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} · cada 15 min`;
+    upd.textContent = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} · cada 15 min`;
+
+    // Update shipping estimate with nearest warehouse that has stock
+    updateShippingPanel(whList);
 
   } catch(e) {
-    grid.innerHTML = `<div class="inv-loading" style="color:var(--danger);">Error cargando inventario: ${e.message}</div>`;
+    grid.innerHTML = `<div class="inv-loading" style="color:var(--danger);">Error: ${e.message}</div>`;
   }
+}
+
+function updateShippingPanel(whList) {
+  const panel = document.getElementById('shipPanel');
+  panel.style.display = 'block';
+
+  // Find nearest warehouse with stock
+  const nearest = whList.find(wh => wh.totalQty > 0) || whList[0];
+  if (!nearest) return;
+
+  const fromWh = document.getElementById('shipFromWh');
+  if (fromWh) fromWh.textContent = `${nearest.abbr} (${nearest.label})`;
+
+  // Calculate shipping estimate
+  calcShipEstimate(nearest);
+}
+
+function calcShipEstimate(warehouse) {
+  const qty = (gv('sz_s')||0) + (gv('sz_m')||0) + (gv('sz_l')||0) + (gv('sz_xl')||0) +
+              (gv('sz_xxl')||0) + (gv('sz_xxxl')||0) + (gv('sz_4xl')||0) + (gv('sz_5xl')||0) || 1;
+  const weightPerPiece = ssaAvgWeightLbs || 0.5; // default 0.5 lb if unknown
+  const totalWeight    = qty * weightPerPiece;
+  const rate           = UPS_RATE_BY_PRIORITY[warehouse.priority || 4] || 0.65;
+  const estimated      = Math.max(UPS_MIN_CHARGE, totalWeight * rate);
+
+  const detail = document.getElementById('shipGroundDetail');
+  const cost   = document.getElementById('shipGroundCost');
+  const est    = document.getElementById('shipEstimate');
+
+  if (detail) detail.textContent = `${qty} pzas × ${weightPerPiece.toFixed(2)} lb = ${totalWeight.toFixed(1)} lb · ${warehouse.days}`;
+  if (cost)   cost.textContent   = '$' + estimated.toFixed(2);
+  if (est) {
+    est.style.display = 'block';
+    est.innerHTML = `<strong>Peso estimado del pedido:</strong> ${totalWeight.toFixed(1)} lb
+      (${qty} pzas × ~${weightPerPiece.toFixed(2)} lb/pza)<br>
+      <strong>UPS Ground desde ${warehouse.abbr}:</strong> ~$${estimated.toFixed(2)}
+      <span style="color:var(--muted);font-size:.62rem;"> · estimado, sin garantía</span>`;
+  }
+
+  // Update shipFee in calc if ground is selected
+  const selected = document.querySelector('input[name=shipMethod]:checked');
+  if (selected?.value === 'ground') {
+    document.getElementById('shipFee').value = estimated.toFixed(2);
+    calc();
+  }
+}
+
+function applyShipMethod(method) {
+  // Update styling
+  ['pickup','ground','custom'].forEach(m => {
+    const el = document.getElementById('shipOpt' + m.charAt(0).toUpperCase() + m.slice(1));
+    if (el) el.classList.toggle('on', m === method);
+  });
+
+  const feeInput = document.getElementById('shipFee');
+  const est      = document.getElementById('shipEstimate');
+
+  if (method === 'pickup') {
+    if (feeInput) feeInput.value = '0';
+    if (est) est.style.display = 'none';
+  } else if (method === 'ground') {
+    // Re-run estimate with current nearest warehouse
+    if (ssaInventoryCache && selectedColorName) {
+      const whList = ssaInventoryCache[selectedColorName] || [];
+      const nearest = whList.find(wh => wh.totalQty > 0) || whList[0];
+      if (nearest) calcShipEstimate(nearest);
+    }
+  } else if (method === 'custom') {
+    const custom = parseFloat(document.getElementById('shipCustomCost')?.value) || 0;
+    if (feeInput) feeInput.value = custom.toFixed(2);
+    if (est) est.style.display = 'none';
+  }
+  calc();
 }
 
 function previewColor(frontImg, colorName) {
@@ -1461,7 +1633,7 @@ function resetPreview() {
   if (liveLabel && !selectedColorName) liveLabel.textContent = '';
 }
 
-function selectSSAColor(colorName, swatchImg, inStock, frontImg) {
+function selectSSAColor(colorName, swatchImg, inStock, frontImg, backImg, modelImg) {
   selectedColorName = colorName;
 
   // Highlight swatch
@@ -1470,39 +1642,64 @@ function selectSSAColor(colorName, swatchImg, inStock, frontImg) {
 
   // Update banner image
   const productImg = document.getElementById('ssaProductImg');
-  const liveLabel = document.getElementById('ssaColorLiveLabel');
-  const newImg = frontImg || ssaDefaultImg || '';
+  const liveLabel  = document.getElementById('ssaColorLiveLabel');
+  const newImg     = frontImg || ssaDefaultImg || '';
   if (productImg && newImg) {
     productImg.style.opacity = '0.4';
     productImg.src = newImg;
-    productImg.onload = () => { productImg.style.opacity = '1'; };
+    productImg.onload  = () => { productImg.style.opacity = '1'; };
     productImg.onerror = () => { productImg.style.opacity = '1'; };
-    // Update lightbox target too
-    productImg.onclick = () => openLightbox(newImg, colorName + ' — ' + (ssaGarmentName||''));
+    productImg.onclick = () => openLightbox(newImg, colorName + ' — ' + (ssaGarmentName || ''));
   }
   if (liveLabel) {
     liveLabel.textContent = (inStock ? '✓ ' : '⚠ ') + colorName;
     liveLabel.style.color = inStock ? 'var(--green)' : 'var(--warn)';
   }
 
-  // Show selected chip below swatches
-  const box = document.getElementById('colorSelectedBox');
-  const chip = document.getElementById('colorChip');
-  const nameEl = document.getElementById('colorSelectedName');
+  // Selected chip
+  const box     = document.getElementById('colorSelectedBox');
+  const chip    = document.getElementById('colorChip');
+  const nameEl  = document.getElementById('colorSelectedName');
   const stockEl = document.getElementById('colorStockBadge');
-  if (box) box.style.display = 'flex';
-  if (nameEl) nameEl.textContent = colorName;
+  if (box)     box.style.display = 'flex';
+  if (nameEl)  nameEl.textContent = colorName;
   if (stockEl) { stockEl.textContent = inStock ? '✓ En stock' : '⚠ Sin stock'; stockEl.style.color = inStock ? 'var(--green)' : 'var(--warn)'; }
-  if (chip) chip.style.background = swatchImg ? `url(${swatchImg}) center/cover` : colorNameToHex(colorName);
+  if (chip)    chip.style.background = swatchImg ? `url(${swatchImg}) center/cover` : colorNameToHex(colorName);
+
+  // Image viewer — thumbnails for front / back / model
+  const viewer = document.getElementById('colorImageViewer');
+  const thumbs = document.getElementById('colorImageThumbs');
+  const main   = document.getElementById('colorImageMain');
+  const images = [
+    { src: frontImg, label: 'Front' },
+    { src: backImg,  label: 'Back'  },
+    { src: modelImg, label: 'Model' },
+  ].filter(i => i.src);
+  if (images.length > 0 && viewer) {
+    viewer.style.display = 'block';
+    main.src = images[0].src;
+    thumbs.innerHTML = images.map((img, i) =>
+      `<img class="color-img-thumb ${i === 0 ? 'on' : ''}" src="${img.src}" title="${img.label}"
+        onclick="selectColorImage(this,'${img.src}')"
+        onerror="this.style.display='none'">`
+    ).join('');
+  } else if (viewer) {
+    viewer.style.display = 'none';
+  }
 
   // Auto tone + underbase
   document.getElementById('shirtTone').value = detectToneFromName(colorName);
   checkUnderbase();
 
-  // Fetch live inventory for this color
+  // Fetch inventory + show shipping
   fetchInventory(colorName);
-
   calc();
+}
+
+function selectColorImage(thumb, src) {
+  document.querySelectorAll('.color-img-thumb').forEach(t => t.classList.remove('on'));
+  thumb.classList.add('on');
+  document.getElementById('colorImageMain').src = src;
 }
 
 function setManualColor(val) {
