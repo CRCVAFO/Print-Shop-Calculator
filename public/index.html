@@ -284,7 +284,7 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
         </div>
         <div class="f">
           <label>Tipo de prenda</label>
-          <select id="garmentType" onchange="calc()">
+          <select id="garmentType" onchange="applyGarmentType()">
             <option value="tshirt">T-Shirt / Tank</option>
             <option value="longsleeve">Long Sleeve (+$0.50/pza)</option>
             <option value="hoodie">Hoodie (+$1.50/pza · velocidad -35%)</option>
@@ -1230,6 +1230,14 @@ function toggleCSG() {
   calc();
 }
 
+// ════ GARMENT TYPE ════
+function applyGarmentType() {
+  const type = document.getElementById('garmentType').value;
+  const mod = GARMENT_MOD[type] || GARMENT_MOD.tshirt;
+  document.getElementById('garmentMarkup').value = mod.markupDefault.toFixed(2);
+  calc();
+}
+
 // ════ UNDERBASE ════
 function checkUnderbase() {
   const tone = document.getElementById('shirtTone').value;
@@ -1318,9 +1326,7 @@ function togglePMS() {
 function toggleTaxExempt() {
   const on = gch('taxExemptOn');
   document.getElementById('taxExemptPanel').style.display = on ? 'block' : 'none';
-  // When exempt is ON, tax is OFF; when exempt is OFF, tax is ON (default behavior)
   document.getElementById('taxOn').checked = !on;
-  document.getElementById('taxRow').style.opacity = '1';
   calc();
 }
 
@@ -1565,23 +1571,21 @@ function calc() {
   const minOrder = gv('minOrder');
   const smallFee = (qty < minOrder) ? gv('smallOrderFee') : 0;
 
-  // ── Water-based / Discharge detection ──
-  const hasWaterBased = locs.some(l => l.inkMult === 1.6 && l.inkMult !== 1.0);
-  const hasDischarge = locs.some(l => l.inkMult === 1.8 && String(INK_TYPES.find(([v])=>l.inkMult==v)?.[1]||'').includes('Discharge'));
+  // ── Water-based / Discharge detection (by label, not just multiplier) ──
   const hasWBorDischarge = locs.some(l => {
     const lbl = INK_TYPES.find(([v])=>l.inkMult==v)?.[1]||'';
     return lbl.includes('Water-based') || lbl.includes('Discharge');
   });
+  const wbSpeedFactor = hasWBorDischarge ? 0.70 : 1.0;
+  const effectiveSpoilRate = hasWBorDischarge ? Math.max(spoilRate, 0.075) : spoilRate;
+  const wbScreenAdd = hasWBorDischarge ? locs.filter(l => {
+    const lb = INK_TYPES.find(([v])=>l.inkMult==v)?.[1]||'';
+    return lb.includes('Water-based') || lb.includes('Discharge');
+  }).length * 2.0 : 0;
+
   // WB warning box
   const wbWarnBox = document.getElementById('wbWarnBox');
   if (wbWarnBox) wbWarnBox.style.display = hasWBorDischarge ? 'block' : 'none';
-
-  // Adjust speed for WB
-  let wbSpeedFactor = hasWBorDischarge ? 0.70 : 1.0;
-  // Adjust spoil rate for WB
-  let effectiveSpoilRate = hasWBorDischarge ? Math.max(spoilRate, 0.075) : spoilRate;
-  // Extra screen cost for WB locations
-  const wbScreenAdd = hasWBorDischarge ? (locs.filter(l=>{const lb=INK_TYPES.find(([v])=>l.inkMult==v)?.[1]||'';return lb.includes('Water-based')||lb.includes('Discharge');}).length * 2.0) : 0;
 
   // ── Adjusted speed ──
   const hasFlash = gch('flashOn') || totalColors >= 2;
@@ -1773,7 +1777,7 @@ function calc() {
   if (gv('marginSlider')<25) alerts.push({t:'w',m:'⚠ Margen menor al 25% — queda poco espacio para imprevistos.'});
   if (locs.some(l=>l.w*l.h>200)) alerts.push({t:'w',m:'⚠ Un print parece muy grande — verifica dimensiones.'});
   if (repeat && gch('artOn')) alerts.push({t:'w',m:'⚠ Reorden activo + art fee activo. En reorden el arte ya debería estar listo.'});
-  if (gs('shirtTone')==='dark' && !undbaseOn) alerts.push({t:'d',m:'⚠ Camisa oscura sin underbase activo. ¿Olvidaste activarlo en Tab ③?'});
+  if ((gs('shirtTone')==='dark' || gs('shirtTone')==='black') && !undbaseOn) alerts.push({t:'d',m:'⚠ Camisa oscura sin underbase activo. ¿Olvidaste activarlo en Tab ③?'});
   if (csg && qty < gv('csgMin')) alerts.push({t:'w',m:'⚠ CSG con menos de '+gv('csgMin')+' piezas — considera rechazar o subir recargo.'});
   if (locs.some(l=>l.inkMult>=1.6 && !l.inkMult==1.6) || locs.some(l=>l.inkMult>=1.6)) {
     const wbLoc = locs.find(l=>l.inkMult>=1.6);
