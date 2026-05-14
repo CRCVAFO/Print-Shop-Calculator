@@ -90,10 +90,10 @@ textarea{resize:vertical;min-height:60px;line-height:1.5;}
 .prod-search button{flex-shrink:0;font-family:'Barlow Condensed',sans-serif;font-size:.75rem;font-weight:700;padding:7px 12px;background:var(--gd);border:1px solid var(--gb);color:var(--ocean);border-radius:3px;cursor:pointer;transition:all .15s;}
 .prod-search button:hover{background:var(--od);border-color:var(--ob);}
 .prod-results{max-height:220px;overflow-y:auto;border:1px solid var(--gb);border-radius:3px;margin-bottom:8px;}
-.prod-item{padding:8px 10px;border-bottom:1px solid var(--gb);cursor:pointer;transition:background .15s;}
+.prod-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--gb);cursor:pointer;transition:background .15s;}
 .prod-item:last-child{border-bottom:none;}
 .prod-item:hover{background:var(--od);}
-.prod-name{font-size:.8rem;font-weight:600;color:var(--white);}
+.prod-img{width:44px;height:44px;border-radius:3px;object-fit:cover;background:var(--bg3);flex-shrink:0;border:1px solid var(--gb);}.prod-img-ph{width:44px;height:44px;border-radius:3px;background:var(--bg3);border:1px solid var(--gb);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;}.prod-info{flex:1;min-width:0;}.prod-name{font-size:.82rem;font-weight:600;color:var(--white);}
 .prod-meta{font-size:.64rem;color:var(--muted);margin-top:1px;}
 .prod-price{font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:700;color:var(--green);}
 /* Location cards */
@@ -1029,37 +1029,43 @@ async function searchSSA() {
   if (!q) return;
   const res = document.getElementById('ssaResults');
   res.style.display = 'block';
-  res.innerHTML = '<div class="prod-item"><span class="prod-meta">Buscando en SS&A…</span></div>';
+  res.innerHTML = '<div class="prod-item"><div class="prod-img-ph">🔍</div><div class="prod-info"><div class="prod-name">Buscando en SS&A…</div></div></div>';
   try {
     const r = await fetch('/api/ssa-styles?q=' + encodeURIComponent(q));
     const data = await r.json();
     if (!data || data.length === 0) {
-      res.innerHTML = '<div class="prod-item"><span class="prod-meta">Sin resultados para "' + q + '".</span></div>';
+      res.innerHTML = '<div class="prod-item"><div class="prod-img-ph">😕</div><div class="prod-info"><div class="prod-name">Sin resultados para "' + q + '"</div><div class="prod-meta">Intenta con el número de estilo: 5000, 3001, 1717…</div></div></div>';
       return;
     }
-    res.innerHTML = data.slice(0, 12).map(s =>
-      `<div class="prod-item" onclick="loadStylePrices(${s.styleID},'${s.brandName} ${s.styleName}')">
-        <div class="prod-name">${s.brandName} ${s.styleName}</div>
-        <div class="prod-meta">${s.baseCategory || ''} · Click para cargar precios</div>
-      </div>`
-    ).join('');
+    res.innerHTML = data.slice(0, 12).map(s => {
+      const imgEl = s.image
+        ? `<img class="prod-img" src="${s.image}" alt="${s.styleName}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
+        : '';
+      const ph = `<div class="prod-img-ph" style="${s.image?'display:none':''}">👕</div>`;
+      return `<div class="prod-item" onclick="loadStylePrices(${s.styleID},'${s.brandName} ${s.styleName}')">
+        ${imgEl}${ph}
+        <div class="prod-info">
+          <div class="prod-name">${s.brandName} ${s.styleName}</div>
+          <div class="prod-meta">${s.title || ''} · ${s.baseCategory || ''}</div>
+        </div>
+      </div>`;
+    }).join('');
   } catch(e) {
-    res.innerHTML = '<div class="prod-item"><span class="prod-meta" style="color:var(--danger)">Error al buscar. Revisa la conexión.</span></div>';
+    res.innerHTML = '<div class="prod-item"><div class="prod-img-ph">❌</div><div class="prod-info"><div class="prod-name">Error al buscar</div><div class="prod-meta">Revisa la conexión</div></div></div>';
   }
 }
 
 async function loadStylePrices(styleID, name) {
   const res = document.getElementById('ssaResults');
-  res.innerHTML = '<div class="prod-item"><span class="prod-meta">Cargando precios…</span></div>';
+  res.innerHTML = '<div class="prod-item"><div class="prod-img-ph">⏳</div><div class="prod-info"><div class="prod-name">Cargando precios de tu cuenta…</div></div></div>';
   try {
     const r = await fetch('/api/ssa-products?styleid=' + styleID);
     const data = await r.json();
     if (!data || !data.prices || data.prices.length === 0) return;
 
-    // Find S-XL base price
+    // Find base price (S-XL or cheapest)
     const sxl = data.prices.find(p =>
-      p.sizePriceCodeName === 'S-XL' ||
-      p.sizePriceCodeName === 'S/M-XL/XXL' ||
+      p.sizePriceCodeName === 'S-XL' || p.sizePriceCodeName === 'S/M-XL/XXL' ||
       p.sizeName === 'M' || p.sizeName === 'L'
     ) || data.prices[0];
 
@@ -1072,24 +1078,41 @@ async function loadStylePrices(styleID, name) {
       document.getElementById('shirtCost').value = sxl.customerPrice.toFixed(2);
       document.querySelectorAll('#shirtPresets .pb').forEach(b => b.classList.remove('on'));
 
-      let msg = `✓ <strong>${name}</strong> — S–XL: <strong>$${sxl.customerPrice.toFixed(2)}</strong>`;
+      // Update upcharges
+      if (xxl)  { document.getElementById('up2xl').value = (xxl.customerPrice  - sxl.customerPrice).toFixed(2); }
+      if (xxxl) { document.getElementById('up3xl').value = (xxxl.customerPrice - sxl.customerPrice).toFixed(2); }
+      if (x4)   { document.getElementById('up4xl').value = (x4.customerPrice   - sxl.customerPrice).toFixed(2); }
+      if (x5)   { document.getElementById('up5xl').value = (x5.customerPrice   - sxl.customerPrice).toFixed(2); }
 
-      if (xxl)  { const up = (xxl.customerPrice  - sxl.customerPrice).toFixed(2); document.getElementById('up2xl').value = up; msg += ` · 2XL +$${up}`; }
-      if (xxxl) { const up = (xxxl.customerPrice - sxl.customerPrice).toFixed(2); document.getElementById('up3xl').value = up; msg += ` · 3XL +$${up}`; }
-      if (x4)   { const up = (x4.customerPrice   - sxl.customerPrice).toFixed(2); document.getElementById('up4xl').value = up; msg += ` · 4XL +$${up}`; }
-      if (x5)   { const up = (x5.customerPrice   - sxl.customerPrice).toFixed(2); document.getElementById('up5xl').value = up; msg += ` · 5XL +$${up}`; }
-
-      msg += ' <span style="font-size:.6rem;opacity:.7">(tu cuenta wholesale)</span>';
-
+      // Show live price box WITH image
       const lp = document.getElementById('ssaLivePrice');
-      lp.innerHTML = msg;
+      const imgHtml = data.frontImage
+        ? `<img src="${data.frontImage}" style="width:52px;height:52px;object-fit:cover;border-radius:3px;border:1px solid var(--gb);flex-shrink:0;" onerror="this.style.display='none'">`
+        : '<div style="width:52px;height:52px;background:var(--bg3);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">👕</div>';
+
+      const upcharges = [
+        xxl  ? `2XL +$${(xxl.customerPrice-sxl.customerPrice).toFixed(2)}`  : '',
+        xxxl ? `3XL +$${(xxxl.customerPrice-sxl.customerPrice).toFixed(2)}` : '',
+        x4   ? `4XL +$${(x4.customerPrice-sxl.customerPrice).toFixed(2)}`   : '',
+        x5   ? `5XL +$${(x5.customerPrice-sxl.customerPrice).toFixed(2)}`   : '',
+      ].filter(Boolean).join(' · ');
+
+      lp.innerHTML = `<div style="display:flex;align-items:center;gap:10px;">
+        ${imgHtml}
+        <div>
+          <div style="font-size:.82rem;font-weight:700;color:var(--white);margin-bottom:3px;">${data.brandName} ${data.styleName}</div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:900;color:var(--green);">$${sxl.customerPrice.toFixed(2)} <span style="font-size:.75rem;font-weight:400;color:var(--muted);">S–XL · tu precio wholesale</span></div>
+          ${upcharges ? `<div style="font-size:.65rem;color:var(--muted);margin-top:2px;">${upcharges}</div>` : ''}
+          <div style="font-size:.62rem;color:var(--muted);margin-top:2px;">${data.colors ? data.colors.length+' colores disponibles' : ''} · ${data.totalSKUs || ''} SKUs</div>
+        </div>
+      </div>`;
       lp.style.display = 'block';
     }
 
     res.style.display = 'none';
     calc();
   } catch(e) {
-    res.innerHTML = '<div class="prod-item"><span class="prod-meta" style="color:var(--danger)">Error cargando precios.</span></div>';
+    res.innerHTML = '<div class="prod-item"><div class="prod-img-ph">❌</div><div class="prod-info"><div class="prod-name">Error cargando precios</div></div></div>';
   }
 }
 
