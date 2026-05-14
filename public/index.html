@@ -48,11 +48,6 @@ textarea{resize:vertical;min-height:60px;line-height:1.5;}
 .hint{font-size:.62rem;color:var(--muted);line-height:1.45;}
 .hint.ok{color:var(--green);}
 .hint.warn{color:var(--warn);}
-.presets{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:11px;}
-.pb{background:var(--gd);border:1px solid var(--gb);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:.75rem;font-weight:700;padding:8px 5px;border-radius:3px;cursor:pointer;text-align:center;transition:all .18s;line-height:1.3;}
-.pb:hover{border-color:var(--ocean);color:var(--ocean);}
-.pb.on{background:var(--od);border-color:var(--ocean);color:var(--ocean);}
-.pb small{font-size:.58rem;font-weight:400;opacity:.7;display:block;}
 .trow{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--gd);border:1px solid var(--gb);border-radius:3px;margin-bottom:7px;}
 .trow.active{background:var(--od);border-color:var(--ob);}
 .tinfo strong{font-size:.85rem;font-weight:500;display:block;}
@@ -69,17 +64,7 @@ textarea{resize:vertical;min-height:60px;line-height:1.5;}
 .ibox.warn{background:rgba(245,166,35,.09);border:1px solid rgba(245,166,35,.25);color:var(--warn);}
 .ibox.purple{background:rgba(167,139,250,.08);border:1px solid rgba(167,139,250,.2);color:var(--purple);}
 .ibox.danger{background:rgba(255,92,92,.09);border:1px solid rgba(255,92,92,.25);color:var(--danger);}
-/* SS&A */
-.ssabox{background:var(--bg3);border:1px solid var(--gb);border-radius:3px;padding:10px 13px;margin-bottom:10px;}
-.ssa-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px;}
-.ssatxt strong{font-size:.85rem;font-weight:500;display:block;}
-.ssatxt small{font-size:.64rem;color:var(--muted);}
-.ssalink{font-family:'Barlow Condensed',sans-serif;font-size:.78rem;font-weight:700;color:var(--ocean);text-decoration:none;border:1px solid var(--ob);padding:5px 10px;border-radius:3px;white-space:nowrap;transition:background .15s;}
-.ssalink:hover{background:var(--od);}
-.ssa-api{display:flex;gap:6px;align-items:center;}
-.ssa-api input{font-size:.78rem;padding:6px 10px;}
-.ssa-api button{flex-shrink:0;font-family:'Barlow Condensed',sans-serif;font-size:.75rem;font-weight:700;padding:7px 12px;background:var(--ocean);border:none;color:var(--bg);border-radius:3px;cursor:pointer;white-space:nowrap;transition:background .15s;}
-.ssa-api button:hover{background:#6fa8ff;}
+/* SS&A status */
 .ssa-status{font-size:.62rem;margin-top:5px;}
 .ssa-status.ok{color:var(--green);}
 .ssa-status.err{color:var(--danger);}
@@ -95,7 +80,6 @@ textarea{resize:vertical;min-height:60px;line-height:1.5;}
 .prod-item:hover{background:var(--od);}
 .prod-img{width:44px;height:44px;border-radius:3px;object-fit:cover;background:var(--bg3);flex-shrink:0;border:1px solid var(--gb);}.prod-img-ph{width:44px;height:44px;border-radius:3px;background:var(--bg3);border:1px solid var(--gb);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.1rem;}.prod-info{flex:1;min-width:0;}.prod-name{font-size:.82rem;font-weight:600;color:var(--white);}
 .prod-meta{font-size:.64rem;color:var(--muted);margin-top:1px;}
-.prod-price{font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:700;color:var(--green);}
 /* Location cards */
 .loc-cards{display:flex;flex-direction:column;gap:10px;margin-bottom:12px;}
 .lcard{background:var(--bg4);border:1px solid var(--gb);border-radius:5px;overflow:hidden;}
@@ -1055,11 +1039,18 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
 
 <script>
 // ════ STATE ════
-let expLevel = 'intermediate';
+let expLevel       = 'intermediate';
 let turnaroundRate = 0;
-let locs = [{id:1, name:'Front', customName:'', w:12, h:14, colors:2, inkMult:1.0}];
-let nextId = 2;
-let ssaConnected = false;
+let locs           = [{id:1, name:'Front', customName:'', w:12, h:14, colors:2, inkMult:1.0}];
+let nextId         = 2;
+let ssaConnected   = false;
+
+// SS&A selection state
+let selectedColorName  = '';
+let ssaDefaultImg      = '';
+let ssaGarmentName     = '';
+let ssaDetectedType    = '';
+let ssaColors          = [];
 
 // ════ EXPERIENCE TABLE (velocidad base para 1 color) ════
 const EXP = {
@@ -1141,7 +1132,7 @@ async function searchSSA() {
       const ph = `<div class="prod-img-ph" style="${s.image?'display:none':''}">👕</div>`;
       const cat = encodeURIComponent(s.baseCategory || '');
       const title = encodeURIComponent(s.title || '');
-      return `<div class="prod-item" onclick="loadStylePrices(${s.styleID},'${s.brandName} ${s.styleName}','${cat}','${title}')">
+      return `<div class="prod-item" onclick="loadStylePrices(${s.styleID},'${cat}','${title}')">
         ${imgEl}${ph}
         <div class="prod-info">
           <div class="prod-name">${s.brandName} ${s.styleName}</div>
@@ -1154,7 +1145,7 @@ async function searchSSA() {
   }
 }
 
-async function loadStylePrices(styleID, name, encodedCat, encodedTitle) {
+async function loadStylePrices(styleID, encodedCat, encodedTitle) {
   const res = document.getElementById('ssaResults');
   res.style.display = 'block';
   res.innerHTML = '<div class="prod-item"><div class="prod-img-ph">⏳</div><div class="prod-info"><div class="prod-name">Cargando precios y colores…</div></div></div>';
@@ -1206,7 +1197,7 @@ async function loadStylePrices(styleID, name, encodedCat, encodedTitle) {
 
       // Show detected type as hint
       const typeLabels = {tshirt:'T-Shirt / Tank', longsleeve:'Long Sleeve', hoodie:'Hoodie', crewneck:'Crewneck', polo:'Polo', heavy:'Heavy / Jacket'};
-      window._ssaDetectedType = typeLabels[detectedType] || 'T-Shirt';
+      ssaDetectedType = typeLabels[detectedType] || 'T-Shirt';
 
       if (xxl)  document.getElementById('up2xl').value = (xxl.customerPrice  - sxl.customerPrice).toFixed(2);
       if (xxxl) document.getElementById('up3xl').value = (xxxl.customerPrice - sxl.customerPrice).toFixed(2);
@@ -1247,9 +1238,9 @@ async function loadStylePrices(styleID, name, encodedCat, encodedTitle) {
         x5   ? `5XL +$${(x5.customerPrice-sxl.customerPrice).toFixed(2)}`   : '',
       ].filter(Boolean).join(' · ');
 
-      window._ssaColors = colors;
-      window._ssaDefaultImg = data.frontImage || '';
-      window._ssaGarmentName = `${data.brandName} ${data.styleName}`;
+      ssaColors = colors;
+      ssaDefaultImg = data.frontImage || '';
+      ssaGarmentName = `${data.brandName} ${data.styleName}`;
 
       const imgSrc = data.frontImage || '';
       const imgHtml = imgSrc
@@ -1263,7 +1254,7 @@ async function loadStylePrices(styleID, name, encodedCat, encodedTitle) {
           <div class="garment-banner-name">${data.brandName} ${data.styleName}</div>
           <div class="garment-banner-price">$${sxl.customerPrice.toFixed(2)} <span style="font-size:.7rem;font-weight:400;color:var(--muted);">S–XL wholesale</span></div>
           ${upcharges ? `<div class="garment-banner-meta">${upcharges}</div>` : ''}
-          <div class="garment-banner-meta">${colors.length ? colors.length+' colores' : ''} · ${data.totalSKUs || ''} SKUs · <span style="color:var(--ocean);">${window._ssaDetectedType}</span></div>
+          <div class="garment-banner-meta">${colors.length ? colors.length+' colores' : ''} · ${data.totalSKUs || ''} SKUs · <span style="color:var(--ocean);">${ssaDetectedType}</span></div>
         </div>
         <div id="ssaColorLiveLabel" style="font-size:.72rem;color:var(--ocean);font-weight:600;text-align:right;min-width:80px;"></div>`;
       lp.style.display = 'flex';
@@ -1328,8 +1319,6 @@ function closeLightbox() {
 }
 function _lbKeyClose(e) { if (e.key === 'Escape') closeLightbox(); }
 
-// pickShirt removed — presets replaced by SS&A search
-
 // ════ CSG ════
 function toggleCSG() {
   const on = gch('csgOn');
@@ -1366,7 +1355,6 @@ function toggleGarmentTypeOverride() {
 }
 
 // ════ SHIRT COLOR — from SS&A swatches ════
-let selectedColorName = '';
 
 function previewColor(frontImg, colorName) {
   const productImg = document.getElementById('ssaProductImg');
@@ -1382,9 +1370,9 @@ function previewColor(frontImg, colorName) {
 function resetPreview() {
   const productImg = document.getElementById('ssaProductImg');
   if (productImg) {
-    if (!selectedColorName && window._ssaDefaultImg) {
+    if (!selectedColorName && ssaDefaultImg) {
       productImg.style.opacity = '0.6';
-      productImg.src = window._ssaDefaultImg;
+      productImg.src = ssaDefaultImg;
       productImg.onload = () => productImg.style.opacity = '1';
     } else {
       productImg.style.opacity = '1';
@@ -1404,14 +1392,14 @@ function selectSSAColor(colorName, swatchImg, inStock, frontImg) {
   // Update banner image
   const productImg = document.getElementById('ssaProductImg');
   const liveLabel = document.getElementById('ssaColorLiveLabel');
-  const newImg = frontImg || window._ssaDefaultImg || '';
+  const newImg = frontImg || ssaDefaultImg || '';
   if (productImg && newImg) {
     productImg.style.opacity = '0.4';
     productImg.src = newImg;
     productImg.onload = () => { productImg.style.opacity = '1'; };
     productImg.onerror = () => { productImg.style.opacity = '1'; };
     // Update lightbox target too
-    productImg.onclick = () => openLightbox(newImg, colorName + ' — ' + (window._ssaGarmentName||''));
+    productImg.onclick = () => openLightbox(newImg, colorName + ' — ' + (ssaGarmentName||''));
   }
   if (liveLabel) {
     liveLabel.textContent = (inStock ? '✓ ' : '⚠ ') + colorName;
@@ -2034,14 +2022,23 @@ function calc() {
   document.getElementById('alertsBox').innerHTML = alerts.map(a=>`<div class="alert ${a.t}">${a.m}</div>`).join('');
 
   // ── Volume tiers ──
-  renderTiers(blendedWholesale, blendedRetail, garmentMarkup, csg, csgSur, inkWaste, spoilRate, testShirts,
-    adjSpeed, scPerInternal, totalColors, repeat, screenFeeClient, totalArtFee,
-    setupFee, pmsFee, shipFee, otherFix, inkChangesCost, smallFee, setupLaborCost, breakdownLaborCost, overheadFixed, undbaseOn, gMod);
+  renderTiers({
+    blendedWholesale, blendedRetail, garmentMarkup, csg, csgSur,
+    inkWaste, spoilRate, testShirts, adjSpeed, scPerInternal,
+    totalColors, repeat, screenFeeClient, totalArtFee, setupFee,
+    pmsFee, shipFee, otherFix, inkChangesCost, smallFee,
+    setupLaborCost, breakdownLaborCost, overheadFixed, undbaseOn, gMod
+  });
 }
 
-function renderTiers(blendedWholesale, blendedRetail, garmentMarkup, csg, csgSur, inkWaste, spoilRate, testShirts,
-    adjSpeed, scPerInternal, totalColors, repeat, screenFeeClient, totalArtFee,
-    setupFee, pmsFee, shipFee, otherFix, inkChangesCost, smallFee, setupLaborCost, breakdownLaborCost, overheadFixed, undbaseOn, gMod) {
+function renderTiers(c) {
+  const {
+    blendedWholesale, blendedRetail, csg, csgSur,
+    inkWaste, spoilRate, testShirts, adjSpeed, scPerInternal,
+    totalColors, repeat, screenFeeClient, totalArtFee, setupFee,
+    pmsFee, shipFee, otherFix, inkChangesCost, smallFee,
+    setupLaborCost, breakdownLaborCost, overheadFixed, undbaseOn, gMod
+  } = c;
   const qtys = [12,24,36,48,72,96,144,250,500,1000];
   const inkSqIn = gv('inkSqIn');
   const minO = gv('minOrder');
