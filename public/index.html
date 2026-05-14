@@ -321,8 +321,12 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
   <div class="sec">
     <div class="g2">
       <div class="f">
-        <label>Tipo de prenda</label>
-        <select id="garmentType" onchange="applyGarmentType()">
+        <label>Tipo de prenda <span id="garmentTypeAutoLabel" style="color:var(--ocean);font-size:.6rem;font-weight:700;letter-spacing:.06em;margin-left:4px;">AUTO</span></label>
+        <div id="garmentTypeDisplay" style="background:var(--gd);border:1px solid var(--gb);border-radius:3px;padding:8px 11px;font-size:.88rem;color:var(--white);display:flex;justify-content:space-between;align-items:center;">
+          <span id="garmentTypeLabel">T-Shirt / Tank</span>
+          <button onclick="toggleGarmentTypeOverride()" style="background:none;border:none;color:var(--muted);font-size:.62rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;padding:0;text-decoration:underline;" id="garmentTypeOverrideBtn">cambiar</button>
+        </div>
+        <select id="garmentType" onchange="applyGarmentType(true)" style="display:none;margin-top:4px;">
           <option value="tshirt">T-Shirt / Tank</option>
           <option value="longsleeve">Long Sleeve</option>
           <option value="hoodie">Hoodie</option>
@@ -1177,7 +1181,22 @@ async function loadStylePrices(styleID, name) {
 
     if (sxl) {
       document.getElementById('shirtCost').value = sxl.customerPrice.toFixed(2);
-      document.querySelectorAll('#shirtPresets .pb').forEach(b => b.classList.remove('on'));
+
+      // ── Auto-detect garment type from SS&A data ──
+      const cat = ((data.baseCategory || '') + ' ' + (data.styleName || '') + ' ' + (data.brandName || '')).toLowerCase();
+      let detectedType = 'tshirt';
+      if (/hoodie|pullover|zip.up|full.zip/.test(cat)) detectedType = 'hoodie';
+      else if (/crewneck|crew neck|sweatshirt|fleece/.test(cat)) detectedType = 'crewneck';
+      else if (/long.sleeve|ls\b|longsleeve/.test(cat)) detectedType = 'longsleeve';
+      else if (/polo|golf|performance/.test(cat)) detectedType = 'polo';
+      else if (/jacket|heavy|coat|vest/.test(cat)) detectedType = 'heavy';
+      const garmentSel = document.getElementById('garmentType');
+      garmentSel.value = detectedType;
+      applyGarmentType(); // updates markup default too
+
+      // Show detected type as hint
+      const typeLabels = {tshirt:'T-Shirt / Tank', longsleeve:'Long Sleeve', hoodie:'Hoodie', crewneck:'Crewneck', polo:'Polo', heavy:'Heavy / Jacket'};
+      window._ssaDetectedType = typeLabels[detectedType] || 'T-Shirt';
 
       if (xxl)  document.getElementById('up2xl').value = (xxl.customerPrice  - sxl.customerPrice).toFixed(2);
       if (xxxl) document.getElementById('up3xl').value = (xxxl.customerPrice - sxl.customerPrice).toFixed(2);
@@ -1234,7 +1253,7 @@ async function loadStylePrices(styleID, name) {
           <div class="garment-banner-name">${data.brandName} ${data.styleName}</div>
           <div class="garment-banner-price">$${sxl.customerPrice.toFixed(2)} <span style="font-size:.7rem;font-weight:400;color:var(--muted);">S–XL wholesale</span></div>
           ${upcharges ? `<div class="garment-banner-meta">${upcharges}</div>` : ''}
-          <div class="garment-banner-meta">${colors.length ? colors.length+' colores' : ''} · ${data.totalSKUs || ''} SKUs</div>
+          <div class="garment-banner-meta">${colors.length ? colors.length+' colores' : ''} · ${data.totalSKUs || ''} SKUs · <span style="color:var(--ocean);">${window._ssaDetectedType}</span></div>
         </div>
         <div id="ssaColorLiveLabel" style="font-size:.72rem;color:var(--ocean);font-weight:600;text-align:right;min-width:80px;"></div>`;
       lp.style.display = 'flex';
@@ -1297,26 +1316,7 @@ function closeLightbox() {
 }
 function _lbKeyClose(e) { if (e.key === 'Escape') closeLightbox(); }
 
-// ════ SHIRT PRESETS ════
-function pickShirt(btn) {
-  document.querySelectorAll('#shirtPresets .pb').forEach(b => b.classList.remove('on'));
-  btn.classList.add('on');
-  const c = parseFloat(btn.dataset.cost);
-  if (c > 0) document.getElementById('shirtCost').value = c.toFixed(2);
-  else document.getElementById('shirtCost').focus();
-  document.getElementById('ssaLivePrice').style.display = 'none';
-  // Auto-search SS&A for this style to load colors
-  const styleNum = btn.dataset.style;
-  if (styleNum && ssaConnected) {
-    autoLoadStyleColors(styleNum);
-  } else {
-    // No SSA — reset colors
-    selectedColorName = '';
-    document.getElementById('colorNoGarment').style.display = 'block';
-    document.getElementById('colorFromSSA').style.display = 'none';
-  }
-  calc();
-}
+// pickShirt removed — presets replaced by SS&A search
 
 async function autoLoadStyleColors(styleNum) {
   try {
@@ -1342,11 +1342,28 @@ function toggleCSG() {
 }
 
 // ════ GARMENT TYPE ════
-function applyGarmentType() {
+function applyGarmentType(manual) {
   const type = document.getElementById('garmentType').value;
   const mod = GARMENT_MOD[type] || GARMENT_MOD.tshirt;
   document.getElementById('garmentMarkup').value = mod.markupDefault.toFixed(2);
+  // Update display label
+  const labels = {tshirt:'T-Shirt / Tank', longsleeve:'Long Sleeve', hoodie:'Hoodie', crewneck:'Crewneck', polo:'Polo', heavy:'Heavy / Jacket'};
+  const lbl = document.getElementById('garmentTypeLabel');
+  if (lbl) lbl.textContent = labels[type] || 'T-Shirt / Tank';
+  // If manually set, show AUTO label as overridden
+  const autoLbl = document.getElementById('garmentTypeAutoLabel');
+  if (autoLbl && manual) { autoLbl.textContent = 'MANUAL'; autoLbl.style.color = 'var(--warn)'; }
   calc();
+}
+
+function toggleGarmentTypeOverride() {
+  const sel = document.getElementById('garmentType');
+  const btn = document.getElementById('garmentTypeOverrideBtn');
+  const disp = document.getElementById('garmentTypeDisplay');
+  const open = sel.style.display === 'block';
+  sel.style.display = open ? 'none' : 'block';
+  btn.textContent = open ? 'cambiar' : 'cerrar';
+  if (open) disp.style.display = 'flex'; else disp.style.display = 'none';
 }
 
 // ════ SHIRT COLOR — from SS&A swatches ════
