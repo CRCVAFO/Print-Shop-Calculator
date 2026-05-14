@@ -212,6 +212,40 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
 .csw-img{width:100%;height:100%;object-fit:cover;border-radius:3px;}
 .color-selected{display:flex;align-items:center;gap:8px;margin-top:8px;padding:7px 10px;background:var(--od);border:1px solid var(--ob);border-radius:3px;font-size:.78rem;}
 .color-chip{width:20px;height:20px;border-radius:3px;border:1px solid rgba(255,255,255,.18);flex-shrink:0;}
+/* Job lines */
+.job-lines{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+.job-line{background:var(--bg3);border:1px solid var(--gb);border-radius:5px;overflow:hidden;}
+.job-line.active{border-color:var(--ocean);}
+.jl-header{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--bg4);cursor:pointer;user-select:none;}
+.jl-num{font-family:'Barlow Condensed',sans-serif;font-size:.65rem;font-weight:900;letter-spacing:.1em;color:var(--muted);background:var(--gd);border:1px solid var(--gb);padding:2px 7px;border-radius:2px;flex-shrink:0;}
+.jl-title{font-size:.82rem;font-weight:600;color:var(--white);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.jl-method{font-size:.6rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:2px;flex-shrink:0;}
+.jl-method.sp{background:rgba(80,143,255,.15);color:var(--ocean);border:1px solid var(--ob);}
+.jl-method.emb{background:rgba(167,139,250,.15);color:var(--purple);border:1px solid rgba(167,139,250,.3);}
+.jl-total{font-family:'Barlow Condensed',sans-serif;font-size:.9rem;font-weight:900;color:var(--green);flex-shrink:0;}
+.jl-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.9rem;padding:2px 6px;border-radius:2px;transition:color .15s;flex-shrink:0;}
+.jl-del:hover{color:var(--danger);}
+.jl-body{padding:12px;display:none;}
+.jl-body.open{display:block;}
+/* Method toggle */
+.method-toggle{display:flex;gap:6px;margin-bottom:12px;}
+.method-btn{flex:1;padding:9px;border:1px solid var(--gb);background:var(--gd);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:3px;cursor:pointer;transition:all .18s;text-align:center;}
+.method-btn:hover{border-color:var(--ocean);color:var(--ocean);}
+.method-btn.on.sp{background:var(--od);border-color:var(--ocean);color:var(--ocean);}
+.method-btn.on.emb{background:rgba(167,139,250,.12);border-color:rgba(167,139,250,.4);color:var(--purple);}
+/* Embroidery */
+.emb-section{background:rgba(167,139,250,.06);border:1px solid rgba(167,139,250,.2);border-radius:4px;padding:12px;margin-top:10px;}
+.emb-stitch-presets{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:9px;}
+.emb-sp{padding:5px 10px;border:1px solid var(--gb);background:var(--gd);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:.72rem;font-weight:700;border-radius:2px;cursor:pointer;transition:all .15s;}
+.emb-sp:hover,.emb-sp.on{border-color:var(--purple);color:var(--purple);background:rgba(167,139,250,.1);}
+/* Add line button */
+.add-line-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:11px;background:transparent;border:1px dashed var(--gb);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;border-radius:4px;cursor:pointer;transition:all .18s;}
+.add-line-btn:hover{border-color:var(--ocean);color:var(--ocean);}
+/* Job total bar */
+.job-total-bar{background:var(--bg4);border:1px solid var(--gb);border-radius:4px;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;margin-top:8px;}
+.job-total-label{font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.job-total-val{font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--green);}
+
 /* Inventory panel */
 .inv-panel{margin-top:10px;background:var(--bg3);border:1px solid var(--gb);border-radius:4px;overflow:hidden;}
 .inv-header{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;background:var(--bg4);border-bottom:1px solid var(--gb);}
@@ -290,223 +324,14 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
 <!-- ═══════════════════ TAB 1: CAMISA ═══════════════════ -->
 <div id="tab-garment" class="panel on">
 
-  <!-- ① Buscar en SS&A -->
+  <!-- Job lines container -->
   <div class="sec">
-    <div class="slbl">Prenda</div>
-    <div class="prod-search">
-      <input type="text" id="ssaQuery" placeholder="Buscar: Gildan 5000, Bella Canvas 3001, Comfort Colors…" onkeydown="if(event.key==='Enter')searchSSA()">
-      <button onclick="searchSSA()">Buscar</button>
-    </div>
-    <div id="ssaResults" class="prod-results" style="display:none;"></div>
-    <div id="ssaStatus" class="ssa-status loading" style="margin-top:4px;">Verificando conexión con SS&A…</div>
-
-    <!-- Banner: aparece al seleccionar garment -->
-    <div id="ssaLivePrice" style="display:none;margin-top:10px;"></div>
-
-    <!-- Placeholder: antes de seleccionar -->
-    <div id="garmentPlaceholder" style="margin-top:8px;" class="ibox blue" style="font-size:.7rem;">
-      💡 Busca un estilo arriba para ver precio, colores y tallas disponibles desde tu cuenta SS&amp;A.
-    </div>
-  </div>
-
-  <!-- ② Color — aparece después de seleccionar garment -->
-  <div id="colorSection" style="display:none;" class="sec">
-    <div class="slbl">Color</div>
-    <div id="colorSwatches" class="color-swatches"></div>
-
-    <!-- Selected color info -->
-    <div id="colorSelectedBox" class="color-selected" style="display:none;">
-      <div class="color-chip" id="colorChip"></div>
-      <span id="colorSelectedName" style="font-weight:600;"></span>
-      <span id="colorStockBadge" style="font-size:.62rem;margin-left:auto;"></span>
-    </div>
-
-    <!-- Color image viewer (front / back / model) -->
-    <div id="colorImageViewer" style="display:none;margin-top:8px;">
-      <div class="color-images" id="colorImageThumbs"></div>
-      <img id="colorImageMain" class="color-img-main" src="" alt=""
-        onclick="openLightbox(this.src, document.getElementById('colorSelectedName').textContent)">
-    </div>
-
-    <div id="undbaseWarn" style="display:none;margin-top:7px;" class="ibox warn"></div>
-
-    <!-- Inventory by warehouse -->
-    <div id="invPanel" class="inv-panel" style="display:none;">
-      <div class="inv-header">
-        <span class="inv-title">📦 Stock — <span id="invColorLabel"></span></span>
-        <span class="inv-updated" id="invUpdated"></span>
-      </div>
-      <div id="invGrid"></div>
-    </div>
-
-    <!-- Shipping estimator -->
-    <div id="shipPanel" class="ship-panel" style="display:none;">
-      <div class="ship-title">🚚 Entrega</div>
-      <div class="ship-opts">
-        <label class="ship-opt on" id="shipOptPickup">
-          <input type="radio" name="shipMethod" value="pickup" checked onchange="applyShipMethod('pickup')">
-          <div>
-            <div class="ship-opt-label">Pickup en shop</div>
-            <div class="ship-opt-detail">Sin costo de envío</div>
-          </div>
-          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:900;color:var(--green);">$0.00</span>
-        </label>
-        <label class="ship-opt" id="shipOptGround">
-          <input type="radio" name="shipMethod" value="ground" onchange="applyShipMethod('ground')">
-          <div>
-            <div class="ship-opt-label">UPS Ground desde <span id="shipFromWh">—</span></div>
-            <div class="ship-opt-detail" id="shipGroundDetail">Calculando…</div>
-          </div>
-          <span style="font-family:'Barlow Condensed',sans-serif;font-weight:900;color:var(--ocean);" id="shipGroundCost">—</span>
-        </label>
-        <label class="ship-opt" id="shipOptCustom">
-          <input type="radio" name="shipMethod" value="custom" onchange="applyShipMethod('custom')">
-          <div style="flex:1;">
-            <div class="ship-opt-label">Otro / cotización manual</div>
-            <input type="number" id="shipCustomCost" value="0" min="0" step="5"
-              style="margin-top:5px;width:120px;font-size:.82rem;padding:5px 8px;"
-              onclick="event.stopPropagation()"
-              oninput="applyShipMethod('custom')">
-          </div>
-        </label>
-      </div>
-      <div id="shipEstimate" class="ship-estimate" style="display:none;"></div>
-    </div>
-
-    <!-- Manual color fallback (SSA not connected) -->
-    <div id="colorManualFallback" style="display:none;margin-top:6px;">
-      <input type="text" id="shirtColorManual" placeholder="Escribe el color manualmente…" oninput="setManualColor(this.value)">
-    </div>
-  </div>
-
-  <!-- Hidden elements needed by calc -->
-  <select id="shirtTone" style="display:none;" onchange="checkUnderbase()">
-    <option value="light">Claro</option>
-    <option value="medium">Medio</option>
-    <option value="dark">Oscuro</option>
-    <option value="black">Negro</option>
-  </select>
-
-  <!-- ③ Tipo + CSG — una sola fila -->
-  <div class="sec">
-    <div id="headwearWarn" style="display:none;margin-bottom:10px;" class="ibox warn">
-      🧢 <strong>Gorra / Headwear detectada.</strong> Las gorras generalmente se decoran con <strong>bordado</strong>, no screen printing. Verifica el método de decoración antes de cotizar. Esta calculadora está optimizada para screen printing en prendas planas.
-    </div>
-    <div class="g2">
-      <div class="f">
-        <label>Tipo de prenda <span id="garmentTypeAutoLabel" style="color:var(--ocean);font-size:.6rem;font-weight:700;letter-spacing:.06em;margin-left:4px;">AUTO</span></label>
-        <div id="garmentTypeDisplay" style="background:var(--gd);border:1px solid var(--gb);border-radius:3px;padding:8px 11px;font-size:.88rem;color:var(--white);display:flex;justify-content:space-between;align-items:center;">
-          <span id="garmentTypeLabel">T-Shirt / Tank</span>
-          <button onclick="toggleGarmentTypeOverride()" style="background:none;border:none;color:var(--muted);font-size:.62rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;cursor:pointer;padding:0;text-decoration:underline;" id="garmentTypeOverrideBtn">cambiar</button>
-        </div>
-        <select id="garmentType" onchange="applyGarmentType(true)" style="display:none;margin-top:4px;">
-          <option value="tshirt">T-Shirt / Tank</option>
-          <option value="longsleeve">Long Sleeve</option>
-          <option value="hoodie">Hoodie</option>
-          <option value="crewneck">Crewneck</option>
-          <option value="polo">Polo</option>
-          <option value="heavy">Heavy / Jacket</option>
-        </select>
-      </div>
-      <div class="f" style="justify-content:flex-end;">
-        <label style="margin-bottom:8px;">Cliente trae camisas (CSG)</label>
-        <div class="trow" id="csgRow" style="margin-bottom:0;">
-          <div class="tinfo">
-            <strong style="font-size:.78rem;">CSG — waiver requerido</strong>
-          </div>
-          <label class="tog"><input type="checkbox" id="csgOn" onchange="toggleCSG()"><span class="tk"></span></label>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ④ Tallas -->
-  <div class="sec">
-    <div class="slbl">Cantidad por talla</div>
-    <div class="sizemix">
-      <div class="szf"><label>S</label><input type="number" id="sz_s" value="0" min="0" oninput="calc()"></div>
-      <div class="szf"><label>M</label><input type="number" id="sz_m" value="0" min="0" oninput="calc()"></div>
-      <div class="szf"><label>L</label><input type="number" id="sz_l" value="0" min="0" oninput="calc()"></div>
-      <div class="szf"><label>XL</label><input type="number" id="sz_xl" value="0" min="0" oninput="calc()"></div>
-      <div class="szf"><label>2XL</label><input type="number" id="sz_xxl" value="0" min="0" oninput="calc()"></div>
-      <div class="szf"><label>3XL</label><input type="number" id="sz_xxxl" value="0" min="0" oninput="calc()"></div>
-      <div class="szf"><label>4XL</label><input type="number" id="sz_4xl" value="0" min="0" oninput="calc()"></div>
-      <div class="szf"><label>5XL</label><input type="number" id="sz_5xl" value="0" min="0" oninput="calc()"></div>
-    </div>
-    <div style="font-size:.72rem;color:var(--muted);margin-top:4px;">
-      Total: <strong id="qtyDisp" style="color:var(--white);">0</strong> piezas &nbsp;|&nbsp;
-      Costo blended: <strong id="blendDisp" style="color:var(--ocean);">—</strong>
-    </div>
-  </div>
-
-  <!-- ⑤ Avanzado — colapsado por default -->
-  <div class="sec">
-    <button onclick="toggleAdvancedGarment()" style="background:none;border:1px solid var(--gb);color:var(--muted);font-family:'Barlow Condensed',sans-serif;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:7px 14px;border-radius:3px;cursor:pointer;width:100%;text-align:left;transition:all .15s;" id="advGarmentBtn">
-      ▶ Opciones avanzadas (markup, upcharges, mínimo de pedido)
-    </button>
-    <div id="advGarmentPanel" style="display:none;margin-top:12px;">
-
-      <!-- Costo y markup -->
-      <div id="shirtSection">
-        <div class="g2" style="margin-bottom:9px;">
-          <div class="f">
-            <label>Costo camisa S–XL ($/c/u)</label>
-            <input type="number" id="shirtCost" value="4.50" min="0" step=".25" oninput="calc()">
-            <span class="hint">Se llena automáticamente desde SS&A.</span>
-          </div>
-          <div class="f">
-            <label>Markup prenda (×)</label>
-            <input type="number" id="garmentMarkup" value="1.70" min="1" max="3" step=".05" oninput="calc()">
-            <span class="hint">1.7× default. Hoodie/Crewneck usan 1.8×.</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Upcharges por talla -->
-      <div id="sizeUpchargeSection">
-        <div class="slbl">Upcharges por talla</div>
-        <div class="g4">
-          <div class="f"><label>2XL +$</label><input type="number" id="up2xl" value="2.00" min="0" step=".25" oninput="calc()"></div>
-          <div class="f"><label>3XL +$</label><input type="number" id="up3xl" value="4.00" min="0" step=".25" oninput="calc()"></div>
-          <div class="f"><label>4XL +$</label><input type="number" id="up4xl" value="6.00" min="0" step=".25" oninput="calc()"></div>
-          <div class="f"><label>5XL +$</label><input type="number" id="up5xl" value="8.00" min="0" step=".25" oninput="calc()"></div>
-        </div>
-        <span class="hint">Se llenan automáticamente desde SS&A al seleccionar el estilo.</span>
-      </div>
-
-      <!-- CSG detail -->
-      <div id="csgSection" style="display:none;margin-top:9px;">
-        <div class="ibox danger" style="font-size:.72rem;">
-          🔴 <strong>CSG — WAIVER OBLIGATORIO.</strong> El cliente firma que el shop no es responsable por misprints, daños o scorching.
-        </div>
-        <div class="g2">
-          <div class="f">
-            <label>Recargo CSG ($/camisa)</label>
-            <input type="number" id="csgSurcharge" value="6.00" min="0" step=".50" oninput="calc()">
-            <span class="hint">$4–5 básica · $6–8 premium · $10–12 luxury</span>
-          </div>
-          <div class="f">
-            <label>Mínimo CSG (piezas)</label>
-            <input type="number" id="csgMin" value="36" min="1" step="1" oninput="calc()">
-          </div>
-        </div>
-      </div>
-
-      <!-- Mínimo de pedido -->
-      <div style="margin-top:9px;">
-        <div class="slbl">Mínimo de pedido</div>
-        <div class="g2">
-          <div class="f">
-            <label>Mínimo de piezas</label>
-            <input type="number" id="minOrder" value="24" min="1" step="1" oninput="calc()">
-          </div>
-          <div class="f">
-            <label>Recargo pedido pequeño ($)</label>
-            <input type="number" id="smallOrderFee" value="20" min="0" step="5" oninput="calc()">
-          </div>
-        </div>
-      </div>
-
+    <div class="slbl">Líneas del pedido</div>
+    <div class="job-lines" id="jobLines"></div>
+    <button class="add-line-btn" onclick="addJobLine()">＋ Agregar línea (prenda / bordado)</button>
+    <div class="job-total-bar" id="jobTotalBar" style="display:none;">
+      <span class="job-total-label">Total del job (todas las líneas)</span>
+      <span class="job-total-val" id="jobTotalVal">—</span>
     </div>
   </div>
 
@@ -1138,7 +963,7 @@ let locs           = [{id:1, name:'Front', customName:'', w:12, h:14, colors:2, 
 let nextId         = 2;
 let ssaConnected   = false;
 
-// SS&A selection state
+// SS&A selection state (for main quote / single line)
 let selectedColorName  = '';
 let ssaDefaultImg      = '';
 let ssaGarmentName     = '';
@@ -1146,7 +971,23 @@ let ssaDetectedType    = '';
 let ssaColors          = [];
 let ssaCurrentStyleID  = null;
 let ssaInventoryCache  = null;
-let ssaAvgWeightLbs    = null; // for shipping estimate
+let ssaAvgWeightLbs    = null;
+
+// ════ JOB LINES STATE ════
+let jobLines     = [];
+let activeLineId = null;
+let nextLineId   = 1;
+
+const EMB_STITCH_RATES = [
+  { label:'< 5k',   max:5000,  price:5.00 },
+  { label:'5–8k',   max:8000,  price:6.50 },
+  { label:'8–12k',  max:12000, price:8.00 },
+  { label:'12–15k', max:15000, price:10.00 },
+  { label:'15–20k', max:20000, price:12.50 },
+  { label:'20k+',   max:99999, price:15.00 },
+];
+
+const EMB_SPM = { tshirt:800, longsleeve:750, hoodie:650, crewneck:700, polo:750, heavy:600, cap:650 };
 
 // ════ EXPERIENCE TABLE (velocidad base para 1 color) ════
 const EXP = {
@@ -1183,6 +1024,335 @@ const INK_TYPES = [
 ];
 
 // ════ SS&A API — calls go through /api/ssa-* proxy (credentials are server-side) ════
+// ════ JOB LINES ════
+
+function addJobLine() {
+  const id = nextLineId++;
+  jobLines.push({
+    id, method:'sp', garmentName:'', garmentCost:0, garmentMarkup:1.7,
+    color:'', garmentType:'tshirt', garmentImg:'', isCSG:false, csgSurcharge:6.00,
+    sizes:{S:0,M:0,L:0,XL:0,'2XL':0,'3XL':0,'4XL':0,'5XL':0},
+    upcharges:{'2XL':2,'3XL':4,'4XL':6,'5XL':8},
+    spDecorationCost:0, stitchCount:8000, designW:4, designH:3,
+    digitizingFee:35, embGarmentType:'tshirt', embLaborRate:18, embMachineCost:0.008,
+    styleID:null, avgWeightLbs:0.5, totalQty:0, lineTotal:0, unitPrice:0,
+  });
+  activeLineId = id;
+  renderJobLines();
+  setTimeout(() => document.getElementById('jl-'+id)?.scrollIntoView({behavior:'smooth',block:'nearest'}), 100);
+}
+
+function removeJobLine(id) {
+  jobLines = jobLines.filter(l => l.id !== id);
+  if (activeLineId === id) activeLineId = jobLines.length ? jobLines[jobLines.length-1].id : null;
+  renderJobLines(); calcJobTotal();
+}
+
+function toggleJobLine(id) {
+  activeLineId = activeLineId === id ? null : id;
+  renderJobLines();
+}
+
+function setLineMethod(id, method) {
+  const line = jobLines.find(l => l.id === id);
+  if (line) { line.method = method; calcLineCost(line); renderJobLines(); calcJobTotal(); }
+}
+
+function lineField(id, field, val) {
+  const line = jobLines.find(l => l.id === id);
+  if (!line) return;
+  if (field.startsWith('sz_'))      line.sizes[field.replace('sz_','')] = parseInt(val)||0;
+  else if (field.startsWith('up_')) line.upcharges[field.replace('up_','')] = parseFloat(val)||0;
+  else if (field === 'isCSG')       line.isCSG = !!val;
+  else                              line[field] = isNaN(parseFloat(val)) ? val : (parseFloat(val)||0);
+  calcLineCost(line); renderJobLineHeader(id); calcJobTotal();
+}
+
+function calcLineCost(line) {
+  line.totalQty = Object.values(line.sizes).reduce((s,v) => s+(v||0), 0);
+  if (line.totalQty === 0) { line.lineTotal = 0; line.unitPrice = 0; return; }
+  line.method === 'emb' ? calcEmbLine(line) : calcSPLine(line);
+}
+
+function calcSPLine(line) {
+  const base = line.garmentCost||0;
+  const up = line.upcharges; const sz = line.sizes;
+  const totalGarment = (sz.S+sz.M+sz.L+sz.XL)*base +
+    (sz['2XL']||0)*(base+(up['2XL']||0)) + (sz['3XL']||0)*(base+(up['3XL']||0)) +
+    (sz['4XL']||0)*(base+(up['4XL']||0)) + (sz['5XL']||0)*(base+(up['5XL']||0));
+  const blended = totalGarment / line.totalQty;
+  const retail  = line.isCSG ? 0 : blended * line.garmentMarkup;
+  const csgSur  = line.isCSG ? line.csgSurcharge : 0;
+  line.unitPrice = retail + csgSur + (line.spDecorationCost||0);
+  line.lineTotal = line.unitPrice * line.totalQty;
+}
+
+function calcEmbLine(line) {
+  const qty = line.totalQty;
+  const base = line.garmentCost||0;
+  const up = line.upcharges; const sz = line.sizes;
+  const totalGarment = (sz.S+sz.M+sz.L+sz.XL)*base +
+    (sz['2XL']||0)*(base+(up['2XL']||0)) + (sz['3XL']||0)*(base+(up['3XL']||0)) +
+    (sz['4XL']||0)*(base+(up['4XL']||0)) + (sz['5XL']||0)*(base+(up['5XL']||0));
+  const blended = qty > 0 ? totalGarment/qty : 0;
+  const retail  = line.isCSG ? 0 : blended * line.garmentMarkup;
+  const csgSur  = line.isCSG ? line.csgSurcharge : 0;
+  const stitches = line.stitchCount||8000;
+  const spm = EMB_SPM[line.embGarmentType]||800;
+  const minPerPiece = stitches/spm;
+  const laborPerPiece = (line.embLaborRate/60)*minPerPiece;
+  const machinePerPiece = stitches*line.embMachineCost;
+  const rate = EMB_STITCH_RATES.find(r => stitches<=r.max)||EMB_STITCH_RATES[EMB_STITCH_RATES.length-1];
+  const digitPerPiece = (line.digitizingFee||0)/qty;
+  line.unitPrice = retail + csgSur + rate.price + laborPerPiece + machinePerPiece + digitPerPiece;
+  line.lineTotal = line.unitPrice * qty;
+  line._embMinPerPiece = minPerPiece;
+  line._embLaborPerPiece = laborPerPiece;
+  line._embRatePerPiece = rate.price;
+  line._embDigitPerPiece = digitPerPiece;
+  line._embRateLabel = rate.label;
+}
+
+function calcJobTotal() {
+  jobLines.forEach(l => calcLineCost(l));
+  const total = jobLines.reduce((s,l) => s+l.lineTotal, 0);
+  const bar = document.getElementById('jobTotalBar');
+  const val = document.getElementById('jobTotalVal');
+  if (bar) bar.style.display = jobLines.length > 1 ? 'flex' : 'none';
+  if (val) val.textContent = '$'+total.toFixed(2);
+  if (jobLines.length === 1) {
+    const qd = document.getElementById('qtyDisp');
+    if (qd) qd.textContent = jobLines[0].totalQty||'0';
+  }
+}
+
+function renderJobLineHeader(id) {
+  const line = jobLines.find(l => l.id === id);
+  if (!line) return;
+  const hdr = document.getElementById('jlh-'+id);
+  if (!hdr) return;
+  const title = line.garmentName||(line.method==='emb'?'Bordado':'Screen Print');
+  const colorStr = line.color ? ' · '+line.color : '';
+  const qtyStr = line.totalQty > 0 ? ' · '+line.totalQty+' pzas' : '';
+  hdr.querySelector('.jl-title').textContent = title+colorStr+qtyStr;
+  hdr.querySelector('.jl-method').textContent = line.method==='emb'?'Bordado':'Screen Print';
+  hdr.querySelector('.jl-method').className = 'jl-method '+(line.method==='emb'?'emb':'sp');
+  hdr.querySelector('.jl-total').textContent = line.lineTotal>0 ? '$'+line.lineTotal.toFixed(2) : '—';
+}
+
+function renderJobLines() {
+  const container = document.getElementById('jobLines');
+  if (!container) return;
+  if (jobLines.length === 0) {
+    container.innerHTML = '<div class="ibox blue" style="font-size:.72rem;">👆 Agrega una línea para comenzar el pedido.</div>';
+    calcJobTotal(); return;
+  }
+  container.innerHTML = jobLines.map(line => buildJobLineHTML(line)).join('');
+  calcJobTotal();
+}
+
+function buildJobLineHTML(line) {
+  const isOpen = activeLineId === line.id;
+  const title = line.garmentName||(line.method==='emb'?'Bordado':'Screen Print');
+  const colorStr = line.color?' · '+line.color:'';
+  const qtyStr = line.totalQty>0?' · '+line.totalQty+' pzas':'';
+  const methodCls = line.method==='emb'?'emb':'sp';
+  const methodLabel = line.method==='emb'?'Bordado':'Screen Print';
+  const sz = line.sizes;
+  const sizeInputs = Object.entries(sz).map(([s,v]) =>
+    `<div class="szf"><label>${s}</label><input type="number" value="${v}" min="0"
+      oninput="lineField(${line.id},'sz_${s}',this.value)"></div>`
+  ).join('');
+  const typeOpts = ['tshirt','longsleeve','hoodie','crewneck','polo','heavy','cap'].map(t => {
+    const lbls = {tshirt:'T-Shirt',longsleeve:'Long Sleeve',hoodie:'Hoodie',crewneck:'Crewneck',polo:'Polo',heavy:'Heavy/Jacket',cap:'Gorra/Cap'};
+    return `<option value="${t}" ${line.garmentType===t?'selected':''}>${lbls[t]}</option>`;
+  }).join('');
+
+  const embSection = line.method==='emb' ? buildEmbSectionHTML(line) : `
+    <div class="ibox blue" style="font-size:.7rem;">
+      💡 Los costos de decoración SP (tinta, pantallas, labor) vienen del Tab ② Prints y ③ Pantallas.
+    </div>`;
+
+  return `<div class="job-line ${isOpen?'active':''}" id="jl-${line.id}">
+    <div class="jl-header" id="jlh-${line.id}" onclick="toggleJobLine(${line.id})">
+      <span class="jl-num">#${line.id}</span>
+      <span class="jl-title">${title}${colorStr}${qtyStr}</span>
+      <span class="jl-method ${methodCls}">${methodLabel}</span>
+      <span class="jl-total">${line.lineTotal>0?'$'+line.lineTotal.toFixed(2):'—'}</span>
+      <button class="jl-del" onclick="event.stopPropagation();removeJobLine(${line.id})" title="Eliminar">✕</button>
+    </div>
+    <div class="jl-body ${isOpen?'open':''}">
+      <div class="method-toggle">
+        <button class="method-btn sp ${line.method==='sp'?'on':''}" onclick="setLineMethod(${line.id},'sp')">🖨 Screen Print</button>
+        <button class="method-btn emb ${line.method==='emb'?'on':''}" onclick="setLineMethod(${line.id},'emb')">🧵 Bordado</button>
+      </div>
+      <div style="margin-bottom:10px;">
+        <div class="prod-search">
+          <input type="text" id="ssaQuery-${line.id}" placeholder="Buscar prenda en SS&A…"
+            onkeydown="if(event.key==='Enter')searchSSAForLine(${line.id})">
+          <button onclick="searchSSAForLine(${line.id})">Buscar</button>
+        </div>
+        <div id="ssaResults-${line.id}" class="prod-results" style="display:none;"></div>
+        ${line.garmentName ? `<div class="garment-banner" style="margin-top:8px;">
+          <img src="${line.garmentImg||''}" style="cursor:zoom-in;" onclick="openLightbox('${line.garmentImg||''}','${line.garmentName}')" onerror="this.style.display='none'">
+          <div class="garment-banner-info">
+            <div class="garment-banner-name">${line.garmentName}</div>
+            <div class="garment-banner-price">$${(line.garmentCost||0).toFixed(2)} <span style="font-size:.7rem;color:var(--muted);">S-XL wholesale</span></div>
+          </div>
+        </div>` : ''}
+        <div id="lineSwatches-${line.id}" class="color-swatches" style="margin-top:8px;"></div>
+        ${line.color ? `<div class="color-selected" style="margin-top:6px;">
+          <div class="color-chip" style="background:${colorNameToHex(line.color)}"></div>
+          <span style="font-weight:600;">${line.color}</span>
+        </div>` : ''}
+        <div id="lineUndbaseWarn-${line.id}" style="display:none;" class="ibox warn"></div>
+      </div>
+      <div class="g2" style="margin-bottom:10px;">
+        <div class="f">
+          <label>Tipo de prenda</label>
+          <select onchange="lineField(${line.id},'garmentType',this.value);lineField(${line.id},'embGarmentType',this.value)">${typeOpts}</select>
+        </div>
+        <div class="f">
+          <label>CSG</label>
+          <div class="trow" style="margin:0;"><div class="tinfo"><strong style="font-size:.75rem;">Cliente trae prenda</strong></div>
+          <label class="tog"><input type="checkbox" ${line.isCSG?'checked':''} onchange="lineField(${line.id},'isCSG',this.checked)"><span class="tk"></span></label></div>
+        </div>
+      </div>
+      <div style="margin-bottom:10px;">
+        <label style="display:block;margin-bottom:6px;">Cantidad por talla</label>
+        <div class="sizemix">${sizeInputs}</div>
+        <div style="font-size:.7rem;color:var(--muted);margin-top:4px;">
+          Total: <strong style="color:var(--white);">${line.totalQty}</strong> pzas
+          ${line.lineTotal>0?`· Precio/pza: <strong style="color:var(--ocean);">$${line.unitPrice.toFixed(2)}</strong>`:''}
+        </div>
+      </div>
+      ${embSection}
+    </div>
+  </div>`;
+}
+
+function buildEmbSectionHTML(line) {
+  const stPre = EMB_STITCH_RATES.map((r,i) => {
+    const prev = i > 0 ? EMB_STITCH_RATES[i-1].max : 0;
+    const isOn = line.stitchCount > prev && line.stitchCount <= r.max;
+    const mid = Math.round((prev + r.max) / 2);
+    return `<button class="emb-sp ${isOn?'on':''}" onclick="lineField(${line.id},'stitchCount',${mid});renderJobLines()">${r.label}<br><small style="font-weight:400;">$${r.price.toFixed(2)}/pza</small></button>`;
+  }).join('');
+  const minPP = line._embMinPerPiece ? line._embMinPerPiece.toFixed(1) : '—';
+  const totalMin = line._embMinPerPiece && line.totalQty ? Math.round(line._embMinPerPiece*line.totalQty) : '—';
+  return `<div class="emb-section">
+    <div style="font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--purple);margin-bottom:10px;">🧵 Configuración de Bordado</div>
+    <div style="margin-bottom:10px;">
+      <label style="display:block;margin-bottom:6px;">Puntadas (stitch count)</label>
+      <div class="emb-stitch-presets">${stPre}</div>
+      <input type="number" value="${line.stitchCount}" min="500" step="500" placeholder="Custom…"
+        oninput="lineField(${line.id},'stitchCount',this.value)">
+    </div>
+    <div class="g2" style="margin-bottom:9px;">
+      <div class="f"><label>Ancho diseño (pulg)</label><input type="number" value="${line.designW}" min="0.5" step="0.5" oninput="lineField(${line.id},'designW',this.value)"></div>
+      <div class="f"><label>Alto diseño (pulg)</label><input type="number" value="${line.designH}" min="0.5" step="0.5" oninput="lineField(${line.id},'designH',this.value)"></div>
+    </div>
+    <div class="g2" style="margin-bottom:9px;">
+      <div class="f"><label>Costo digitizing ($)</label>
+        <input type="number" value="${line.digitizingFee}" min="0" step="5" oninput="lineField(${line.id},'digitizingFee',this.value)">
+        <span class="hint">Único por diseño — se amortiza en precio/pza.</span>
+      </div>
+      <div class="f"><label>Labor operador ($/hr)</label>
+        <input type="number" value="${line.embLaborRate}" min="10" step="1" oninput="lineField(${line.id},'embLaborRate',this.value)">
+      </div>
+    </div>
+    ${line.totalQty>0 ? `<div class="ibox blue" style="font-size:.7rem;">
+      ⏱ <strong>${minPP} min/pza</strong> a ${EMB_SPM[line.embGarmentType]||800} SPM
+      · Job total: <strong>${totalMin} min</strong>
+      · Base bordado: <strong>$${(line._embRatePerPiece||0).toFixed(2)}/pza</strong> (${line._embRateLabel||''})
+      · Digitizing: <strong>$${(line._embDigitPerPiece||0).toFixed(2)}/pza</strong>
+    </div>` : ''}
+  </div>`;
+}
+
+// ════ SS&A SEARCH PER LINE ════
+async function searchSSAForLine(lineId) {
+  const input = document.getElementById('ssaQuery-'+lineId);
+  const res   = document.getElementById('ssaResults-'+lineId);
+  if (!input||!res) return;
+  const q = input.value.trim();
+  if (!q) return;
+  res.style.display = 'block';
+  res.innerHTML = '<div class="prod-item"><div class="prod-img-ph">🔍</div><div class="prod-info"><div class="prod-name">Buscando…</div></div></div>';
+  try {
+    const r = await fetch('/api/ssa-styles?q='+encodeURIComponent(q));
+    const data = await r.json();
+    if (!data||data.length===0) { res.innerHTML='<div class="prod-item"><div class="prod-img-ph">😕</div><div class="prod-info"><div class="prod-name">Sin resultados</div></div></div>'; return; }
+    res.innerHTML = data.slice(0,8).map(s => {
+      const img = s.image?`<img class="prod-img" src="${s.image}" onerror="this.style.display='none'">` : '<div class="prod-img-ph">👕</div>';
+      return `<div class="prod-item" onclick="loadStyleForLine(${lineId},${s.styleID},'${encodeURIComponent(s.baseCategory||'')}','${encodeURIComponent(s.title||'')}')">
+        ${img}<div class="prod-info"><div class="prod-name">${s.brandName} ${s.styleName}</div>
+        <div class="prod-meta">${s.title||''} · ${s.baseCategory||''}</div></div></div>`;
+    }).join('');
+  } catch(e) { res.innerHTML=`<div class="prod-item"><div class="prod-img-ph">❌</div><div class="prod-info"><div class="prod-name">Error: ${e.message}</div></div></div>`; }
+}
+
+async function loadStyleForLine(lineId, styleID, encodedCat, encodedTitle) {
+  const line = jobLines.find(l => l.id===lineId);
+  if (!line) return;
+  const res = document.getElementById('ssaResults-'+lineId);
+  if (res) res.innerHTML='<div class="prod-item"><div class="prod-img-ph">⏳</div><div class="prod-info"><div class="prod-name">Cargando…</div></div></div>';
+  try {
+    const r = await fetch('/api/ssa-products?styleid='+styleID);
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    const data = await r.json();
+    if (!data.prices||data.prices.length===0) throw new Error('Sin precios');
+    const sxl = data.prices.find(p=>p.sizePriceCodeName==='S-XL'||p.sizeName==='M')||data.prices[0];
+    line.garmentName=`${data.brandName} ${data.styleName}`; line.garmentCost=sxl.customerPrice;
+    line.garmentImg=data.frontImage||''; line.styleID=styleID; line.avgWeightLbs=data.avgWeightLbs||0.5;
+    const xxl=data.prices.find(p=>p.sizePriceCodeName==='2XL'), xxxl=data.prices.find(p=>p.sizePriceCodeName==='3XL');
+    const x4=data.prices.find(p=>p.sizePriceCodeName==='4XL'), x5=data.prices.find(p=>p.sizePriceCodeName==='5XL');
+    if(xxl) line.upcharges['2XL']=+(xxl.customerPrice-sxl.customerPrice).toFixed(2);
+    if(xxxl) line.upcharges['3XL']=+(xxxl.customerPrice-sxl.customerPrice).toFixed(2);
+    if(x4) line.upcharges['4XL']=+(x4.customerPrice-sxl.customerPrice).toFixed(2);
+    if(x5) line.upcharges['5XL']=+(x5.customerPrice-sxl.customerPrice).toFixed(2);
+    const cat=(decodeURIComponent(encodedCat)+' '+decodeURIComponent(encodedTitle)+' '+(data.styleName||'')).toLowerCase();
+    let gType='tshirt';
+    if(/\bcap\b|\bhat\b|beanie|headwear|snapback|trucker|flexfit|yupoong|richardson/.test(cat)) gType='cap';
+    else if(/hoodie|pullover|zip.up/.test(cat)) gType='hoodie';
+    else if(/crewneck|crew.neck|sweatshirt|fleece/.test(cat)) gType='crewneck';
+    else if(/long.sleeve|ls\b/.test(cat)) gType='longsleeve';
+    else if(/polo|golf/.test(cat)) gType='polo';
+    else if(/jacket|heavy|coat/.test(cat)) gType='heavy';
+    line.garmentType=gType; line.embGarmentType=gType;
+    if(gType==='cap'&&line.method==='sp') line.method='emb';
+    const markups={tshirt:1.7,longsleeve:1.7,hoodie:1.8,crewneck:1.8,polo:1.8,heavy:1.9,cap:1.8};
+    line.garmentMarkup=markups[gType]||1.7;
+    if(data.colors&&data.colors.length>0) { if(res) res.style.display='none'; renderJobLines(); renderLineSwatches(lineId, data.colors); return; }
+    if(res) res.style.display='none';
+    calcLineCost(line); renderJobLines();
+  } catch(e) { if(res) res.innerHTML=`<div class="prod-item"><div class="prod-img-ph">❌</div><div class="prod-info"><div class="prod-name">Error: ${e.message}</div></div></div>`; }
+}
+
+function renderLineSwatches(lineId, colors) {
+  const container = document.getElementById('lineSwatches-'+lineId);
+  if (!container) return;
+  container.innerHTML = colors.slice(0,30).map(c => {
+    const bg = c.swatchImage?`background:url(${c.swatchImage}) center/cover`:`background:${colorNameToHex(c.colorName)}`;
+    const oos = !c.inStock?' oos':'';
+    return `<div class="csw${oos}" title="${c.colorName}" style="${bg};"
+      onclick="selectLineColor(${lineId},'${c.colorName.replace(/'/g,"\\'")}','${c.frontImage||''}')">
+      ${c.swatchImage?`<img class="csw-img" src="${c.swatchImage}" onerror="this.style.display='none'">`:''}</div>`;
+  }).join('');
+}
+
+function selectLineColor(lineId, colorName, frontImg) {
+  const line = jobLines.find(l => l.id===lineId);
+  if (!line) return;
+  line.color=colorName; if(frontImg) line.garmentImg=frontImg;
+  document.getElementById('lineSwatches-'+lineId)?.querySelectorAll('.csw').forEach(el=>el.classList.remove('on'));
+  event.currentTarget.classList.add('on');
+  const tone=detectToneFromName(colorName);
+  const warn=document.getElementById('lineUndbaseWarn-'+lineId);
+  if(warn) { warn.style.display=(tone==='dark'||tone==='black')?'block':'none'; warn.innerHTML='⚠️ <strong>Color oscuro — considera underbase en screen print.</strong>'; }
+  calcLineCost(line); renderJobLineHeader(lineId); calcJobTotal();
+}
+
 async function initSSA() {
   const st = document.getElementById('ssaStatus');
   // Quick ping to verify the proxy is up and credentials work
@@ -2505,6 +2675,7 @@ function doCopy(taId,btnId) {
 document.getElementById('flashOn').checked = true;
 document.getElementById('taxOn').checked = true;
 document.getElementById('undbaseOn').addEventListener('change', calc);
+addJobLine(); // start with one line
 initQuoteNum();
 initExpiry();
 renderLocs();
