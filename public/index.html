@@ -356,32 +356,18 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
       <label class="tog"><input type="checkbox" id="csgOn" onchange="toggleCSG()"><span class="tk"></span></label>
     </div>
 
-    <!-- ⑤ Normal shirt section: presets + cost fields -->
+    <!-- ⑤ Normal shirt section: cost fields only (no presets — use SS&A search above) -->
     <div id="shirtSection">
-      <div class="ibox blue" style="font-size:.7rem;margin-bottom:8px;">
-        💡 <strong>Markup de prenda aplicado automáticamente:</strong> Precio final al cliente incluye markup 1.7× sobre tu costo wholesale. Ajusta en Tab ⑤ si quieres diferente.
-      </div>
-      <div class="presets" id="shirtPresets">
-        <button class="pb on" data-cost="4.50" data-style="5000"  onclick="pickShirt(this)">Gildan 5000<small>~$4.50</small></button>
-        <button class="pb"    data-cost="4.80" data-style="64000" onclick="pickShirt(this)">Gildan 64000<small>~$4.80</small></button>
-        <button class="pb"    data-cost="8.50" data-style="3001"  onclick="pickShirt(this)">B+C 3001<small>~$8.50</small></button>
-        <button class="pb"    data-cost="8.00" data-style="3600"  onclick="pickShirt(this)">Next Level 3600<small>~$8.00</small></button>
-        <button class="pb"    data-cost="11.50" data-style="1717" onclick="pickShirt(this)">Comfort Colors 1717<small>~$11.50</small></button>
-        <button class="pb"    data-cost="13.50" data-style="18500" onclick="pickShirt(this)">Gildan 18500 Hoodie<small>~$13.50</small></button>
-        <button class="pb"    data-cost="11.50" data-style="18000" onclick="pickShirt(this)">Gildan 18000 Crew<small>~$11.50</small></button>
-        <button class="pb"    data-cost="4.80" data-style="5180"  onclick="pickShirt(this)">Hanes 5180<small>~$4.80</small></button>
-        <button class="pb"    data-cost="0"    data-style=""       onclick="pickShirt(this)">Custom<small>escribe abajo</small></button>
-      </div>
       <div class="g2">
         <div class="f">
           <label>Costo camisa S–XL ($/c/u)</label>
           <input type="number" id="shirtCost" value="4.50" min="0" step=".25" oninput="calc()">
-          <span class="hint">Tu precio wholesale SS&A (logueado).</span>
+          <span class="hint">Se llena automáticamente al seleccionar un estilo en SS&A.</span>
         </div>
         <div class="f">
           <label>Markup prenda (×)</label>
           <input type="number" id="garmentMarkup" value="1.70" min="1" max="3" step=".05" oninput="calc()">
-          <span class="hint">1.7× = cobras $7.65 por una camisa de $4.50. Industria: 1.5–2.0×.</span>
+          <span class="hint">1.7× = cobras $7.65 por una camisa de $4.50.</span>
         </div>
       </div>
     </div>
