@@ -1139,7 +1139,9 @@ async function searchSSA() {
         ? `<img class="prod-img" src="${s.image}" alt="${s.styleName}" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
         : '';
       const ph = `<div class="prod-img-ph" style="${s.image?'display:none':''}">👕</div>`;
-      return `<div class="prod-item" onclick="loadStylePrices(${s.styleID},'${s.brandName} ${s.styleName}')">
+      const cat = encodeURIComponent(s.baseCategory || '');
+      const title = encodeURIComponent(s.title || '');
+      return `<div class="prod-item" onclick="loadStylePrices(${s.styleID},'${s.brandName} ${s.styleName}','${cat}','${title}')">
         ${imgEl}${ph}
         <div class="prod-info">
           <div class="prod-name">${s.brandName} ${s.styleName}</div>
@@ -1152,10 +1154,14 @@ async function searchSSA() {
   }
 }
 
-async function loadStylePrices(styleID, name) {
+async function loadStylePrices(styleID, name, encodedCat, encodedTitle) {
   const res = document.getElementById('ssaResults');
   res.style.display = 'block';
   res.innerHTML = '<div class="prod-item"><div class="prod-img-ph">⏳</div><div class="prod-info"><div class="prod-name">Cargando precios y colores…</div></div></div>';
+
+  // Decode category/title passed from search results
+  const ssaCat = encodedCat ? decodeURIComponent(encodedCat) : '';
+  const ssaTitle = encodedTitle ? decodeURIComponent(encodedTitle) : '';
   try {
     const r = await fetch('/api/ssa-products?styleid=' + styleID);
     if (!r.ok) {
@@ -1186,13 +1192,13 @@ async function loadStylePrices(styleID, name) {
     if (sxl) {
       document.getElementById('shirtCost').value = sxl.customerPrice.toFixed(2);
 
-      // ── Auto-detect garment type from SS&A data ──
-      const cat = ((data.baseCategory || '') + ' ' + (data.styleName || '') + ' ' + (data.brandName || '')).toLowerCase();
+      // ── Auto-detect garment type from SS&A category + title + style name ──
+      const cat = (ssaCat + ' ' + ssaTitle + ' ' + (data.styleName || '') + ' ' + (data.brandName || '')).toLowerCase();
       let detectedType = 'tshirt';
       if (/hoodie|pullover|zip.up|full.zip/.test(cat)) detectedType = 'hoodie';
-      else if (/crewneck|crew neck|sweatshirt|fleece/.test(cat)) detectedType = 'crewneck';
-      else if (/long.sleeve|ls\b|longsleeve/.test(cat)) detectedType = 'longsleeve';
-      else if (/polo|golf|performance/.test(cat)) detectedType = 'polo';
+      else if (/crewneck|crew.neck|sweatshirt|fleece/.test(cat)) detectedType = 'crewneck';
+      else if (/long.sleeve|ls\b/.test(cat)) detectedType = 'longsleeve';
+      else if (/polo|golf/.test(cat)) detectedType = 'polo';
       else if (/jacket|heavy|coat|vest/.test(cat)) detectedType = 'heavy';
       const garmentSel = document.getElementById('garmentType');
       garmentSel.value = detectedType;
