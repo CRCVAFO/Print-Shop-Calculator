@@ -1773,6 +1773,22 @@ function calc() {
     document.getElementById('undbaseInfo').style.display='none';
   }
 
+  // ── Water-based / Discharge detection (by label, not just multiplier) ──
+  const hasWBorDischarge = locs.some(l => {
+    const lbl = INK_TYPES.find(([v])=>l.inkMult==v)?.[1]||'';
+    return lbl.includes('Water-based') || lbl.includes('Discharge');
+  });
+  const wbSpeedFactor = hasWBorDischarge ? 0.70 : 1.0;
+  const effectiveSpoilRate = hasWBorDischarge ? Math.max(spoilRate, 0.075) : spoilRate;
+  const wbScreenAdd = hasWBorDischarge ? locs.filter(l => {
+    const lb = INK_TYPES.find(([v])=>l.inkMult==v)?.[1]||'';
+    return lb.includes('Water-based') || lb.includes('Discharge');
+  }).length * 2.0 : 0;
+
+  // WB warning box
+  const wbWarnBox = document.getElementById('wbWarnBox');
+  if (wbWarnBox) wbWarnBox.style.display = hasWBorDischarge ? 'block' : 'none';
+
   // ── Spoilage ──
   const prodNeeded = Math.ceil(qty/(1-effectiveSpoilRate));
   const extraShirts = (prodNeeded - qty) + testShirts;
@@ -1833,22 +1849,6 @@ function calc() {
 
   const minOrder = gv('minOrder');
   const smallFee = (qty < minOrder) ? gv('smallOrderFee') : 0;
-
-  // ── Water-based / Discharge detection (by label, not just multiplier) ──
-  const hasWBorDischarge = locs.some(l => {
-    const lbl = INK_TYPES.find(([v])=>l.inkMult==v)?.[1]||'';
-    return lbl.includes('Water-based') || lbl.includes('Discharge');
-  });
-  const wbSpeedFactor = hasWBorDischarge ? 0.70 : 1.0;
-  const effectiveSpoilRate = hasWBorDischarge ? Math.max(spoilRate, 0.075) : spoilRate;
-  const wbScreenAdd = hasWBorDischarge ? locs.filter(l => {
-    const lb = INK_TYPES.find(([v])=>l.inkMult==v)?.[1]||'';
-    return lb.includes('Water-based') || lb.includes('Discharge');
-  }).length * 2.0 : 0;
-
-  // WB warning box
-  const wbWarnBox = document.getElementById('wbWarnBox');
-  if (wbWarnBox) wbWarnBox.style.display = hasWBorDischarge ? 'block' : 'none';
 
   // ── Adjusted speed ──
   const hasFlash = gch('flashOn') || totalColors >= 2;
