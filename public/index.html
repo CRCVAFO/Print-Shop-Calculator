@@ -269,12 +269,35 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
       </div>
     </div>
 
-    <!-- Shirt color — NUEVO: claro vs oscuro para underbase -->
+    <!-- Shirt color — color picker + tone auto-detect -->
     <div class="sec">
       <div class="slbl">Color de la prenda</div>
       <div class="g2">
         <div class="f">
-          <label>Tono de camisa</label>
+          <label>Color de camisa</label>
+          <select id="shirtColor" onchange="applyShirtColor()">
+            <option value="white|light">Blanco</option>
+            <option value="natural|light">Natural / Crema</option>
+            <option value="ash|light">Ash (gris claro)</option>
+            <option value="sport_grey|medium">Sport Grey</option>
+            <option value="light_blue|medium">Azul claro</option>
+            <option value="silver|medium">Silver / Gris medio</option>
+            <option value="carolina_blue|medium">Carolina Blue</option>
+            <option value="gold|medium">Gold / Amarillo</option>
+            <option value="red|dark">Rojo</option>
+            <option value="royal|dark">Royal Blue</option>
+            <option value="forest|dark">Verde bosque</option>
+            <option value="maroon|dark">Maroon / Guinda</option>
+            <option value="purple|dark">Morado</option>
+            <option value="navy|dark">Azul navy</option>
+            <option value="dark_heather|dark">Dark Heather</option>
+            <option value="charcoal|dark">Charcoal</option>
+            <option value="black|black">Negro</option>
+            <option value="custom|light">Otro (escribe abajo)</option>
+          </select>
+        </div>
+        <div class="f">
+          <label>Tono de camisa (auto)</label>
           <select id="shirtTone" onchange="checkUnderbase()">
             <option value="light">Blanco / Claro (sin underbase)</option>
             <option value="medium">Medio (gris, azul claro) — underbase opcional</option>
@@ -282,8 +305,23 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
             <option value="black">Negro</option>
           </select>
         </div>
+      </div>
+      <div id="shirtColorCustomBox" style="display:none;margin-top:6px;">
         <div class="f">
-          <label>Tipo de prenda</label>
+          <label>Especifica el color</label>
+          <input type="text" id="shirtColorCustom" placeholder="Ej: Dusty Rose, Seafoam, Pepper..." oninput="calc()">
+        </div>
+      </div>
+      <div id="undbaseWarn" style="display:none;margin-top:7px;" class="ibox warn">
+        ⚠️ <strong>Camisa oscura detectada.</strong> Se agrega underbase blanco automáticamente.
+      </div>
+    </div>
+
+    <!-- Garment type -->
+    <div class="sec" style="margin-top:-1rem;">
+      <div class="slbl">Tipo de prenda</div>
+      <div class="f">
+        <label>Tipo de prenda</label>
           <select id="garmentType" onchange="applyGarmentType()">
             <option value="tshirt">T-Shirt / Tank</option>
             <option value="longsleeve">Long Sleeve (+$0.50/pza)</option>
@@ -293,9 +331,6 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
             <option value="heavy">Heavy/Jacket (+$2.50/pza · velocidad -50%)</option>
           </select>
         </div>
-      </div>
-      <div id="undbaseWarn" style="display:none;" class="ibox warn">
-        ⚠️ <strong>Camisa oscura detectada.</strong> Se agrega underbase blanco automáticamente.
       </div>
     </div>
 
@@ -1238,6 +1273,18 @@ function applyGarmentType() {
   calc();
 }
 
+// ════ SHIRT COLOR ════
+function applyShirtColor() {
+  const val = document.getElementById('shirtColor').value;
+  const [colorKey, tone] = val.split('|');
+  // Auto-set tone
+  document.getElementById('shirtTone').value = tone;
+  // Show/hide custom text field
+  document.getElementById('shirtColorCustomBox').style.display = colorKey === 'custom' ? 'block' : 'none';
+  // Trigger underbase logic
+  checkUnderbase();
+}
+
 // ════ UNDERBASE ════
 function checkUnderbase() {
   const tone = document.getElementById('shirtTone').value;
@@ -1889,6 +1936,12 @@ function buildQuoteText() {
   t += `\n`;
   t += `Cantidad: ${qty} piezas\n`;
   t += `Tipo de prenda: ${gs('garmentType')}\n`;
+  // Garment color
+  const colorSel = document.getElementById('shirtColor');
+  const colorVal = colorSel ? colorSel.value.split('|')[0] : '';
+  const colorCustom = document.getElementById('shirtColorCustom') ? document.getElementById('shirtColorCustom').value.trim() : '';
+  const colorLabel = colorVal === 'custom' ? (colorCustom || 'Color personalizado') : (colorSel ? colorSel.options[colorSel.selectedIndex].text : '');
+  if (colorLabel) t += `Color de prenda: ${colorLabel}\n`;
   if (csg) t += `⚠ NOTA CSG: Shop no es responsable por misprints, daños, scorching ni errores en prendas del cliente. Cliente verificó que las prendas son aptas para screen printing (algodón adecuado, sin moisture-wicking, sin prints previos en área de impresión). Cliente proveyó 10% extra de prendas. Prendas deben ser nuevas y sin lavar. Sin reembolso de costos de decoración si el daño es por defecto de la prenda. WAIVER FIRMADO REQUERIDO ANTES DE PRODUCIR.\n`;
   if (repeat) t += `Tipo: Reorden (pantallas en archivo, &lt;12 meses)\n`;
   t += `Turnaround: ${tnLabel}\n`;
