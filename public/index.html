@@ -219,6 +219,15 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
 .profit-row{display:flex;justify-content:space-between;font-size:.74rem;padding:3px 0;}
 .profit-lbl{color:var(--muted);}
 .profit-val{font-weight:600;font-variant-numeric:tabular-nums;}
+/* Color swatches */
+.color-swatches{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+.csw{width:32px;height:32px;border-radius:4px;border:2px solid transparent;cursor:pointer;transition:all .15s;position:relative;flex-shrink:0;}
+.csw:hover{transform:scale(1.15);border-color:var(--ocean);}
+.csw.on{border-color:var(--ocean);box-shadow:0 0 0 2px rgba(80,143,255,.4);}
+.csw.oos{opacity:.35;cursor:not-allowed;}
+.csw-img{width:100%;height:100%;object-fit:cover;border-radius:2px;}
+.color-selected{display:flex;align-items:center;gap:8px;margin-top:8px;padding:7px 10px;background:var(--od);border:1px solid var(--ob);border-radius:3px;font-size:.78rem;}
+.color-chip{width:18px;height:18px;border-radius:3px;border:1px solid rgba(255,255,255,.15);flex-shrink:0;}
 .time-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(34,214,138,.08);border:1px solid rgba(34,214,138,.2);border-radius:2px;padding:4px 10px;font-size:.68rem;font-family:'Barlow Condensed',sans-serif;font-weight:700;color:var(--green);margin-top:6px;}
 </style>
 </head>
@@ -269,65 +278,46 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
       </div>
     </div>
 
-    <!-- Shirt color — color picker + tone auto-detect -->
+    <!-- Shirt color — populated from SS&A when garment is selected -->
     <div class="sec">
       <div class="slbl">Color de la prenda</div>
-      <div class="g2">
+
+      <!-- State: no garment selected yet -->
+      <div id="colorNoGarment" class="ibox blue" style="font-size:.7rem;">
+        💡 Busca y selecciona una prenda arriba para ver los colores disponibles desde SS&amp;A.
+        <div style="margin-top:7px;">
+          <label style="display:block;margin-bottom:4px;">O escribe el color manualmente:</label>
+          <input type="text" id="shirtColorManual" placeholder="Ej: Black, Navy, Sport Grey…" oninput="setManualColor(this.value)">
+        </div>
+      </div>
+
+      <!-- State: colors loaded from SS&A -->
+      <div id="colorFromSSA" style="display:none;">
+        <div id="colorSwatches" class="color-swatches"></div>
+        <div id="colorSelectedBox" class="color-selected" style="display:none;">
+          <div class="color-chip" id="colorChip"></div>
+          <span id="colorSelectedName" style="font-weight:600;"></span>
+          <span id="colorStockBadge" style="font-size:.62rem;margin-left:auto;"></span>
+        </div>
+        <div id="undbaseWarn" style="display:none;margin-top:7px;" class="ibox warn"></div>
+      </div>
+
+      <!-- Fallback: manual only (SS&A not connected) -->
+      <div id="colorManualOnly" style="display:none;">
         <div class="f">
           <label>Color de camisa</label>
-          <select id="shirtColor" onchange="applyShirtColor()">
-            <option value="white|light|#F5F5F0|0">Blanco</option>
-            <option value="natural|light|#EDE0C8|0">Natural / Crema</option>
-            <option value="ash|light|#C8C8C0|0">Ash (gris claro)</option>
-            <option value="sport_grey|medium|#9CA0A4|0">Sport Grey</option>
-            <option value="light_blue|medium|#A8C8E8|0">Azul claro</option>
-            <option value="silver|medium|#A8A8B0|0">Silver / Gris medio</option>
-            <option value="carolina_blue|medium|#7BAFD4|0">Carolina Blue</option>
-            <option value="gold|medium|#E8B820|0">Gold / Amarillo</option>
-            <option value="red|dark|#C8102E|0">Rojo</option>
-            <option value="royal|dark|#1034A6|0">Royal Blue</option>
-            <option value="forest|dark|#1B5E20|0">Verde bosque</option>
-            <option value="maroon|dark|#800000|0">Maroon / Guinda</option>
-            <option value="purple|dark|#6A0DAD|0">Morado</option>
-            <option value="navy|dark|#001F5B|0">Azul navy</option>
-            <option value="dark_heather|dark|#404850|0">Dark Heather</option>
-            <option value="charcoal|dark|#36454F|0">Charcoal</option>
-            <option value="black|black|#1A1A1A|0">Negro</option>
-            <option value="neon_yellow|light|#FFFF00|1.50">Neon / Amarillo ácido (+$1.50)</option>
-            <option value="neon_pink|light|#FF1493|1.50">Neon / Rosa ácido (+$1.50)</option>
-            <option value="tie_dye|light|#CC44AA|3.00">Tie-dye (+$3.00)</option>
-            <option value="camo|dark|#5C6B3A|2.00">Camo (+$2.00)</option>
-            <option value="custom|light|#888888|0">Otro (escribe abajo)</option>
-          </select>
+          <input type="text" id="shirtColorManual2" placeholder="Ej: Black, Navy, Sport Grey…" oninput="setManualColor(this.value)">
         </div>
-        <div class="f" style="justify-content:flex-end;">
-          <label>Vista previa</label>
-          <div id="colorSwatch" style="width:100%;height:40px;border-radius:4px;border:1px solid var(--gb);background:#F5F5F0;transition:background .2s;display:flex;align-items:center;justify-content:center;">
-            <span id="colorSwatchLabel" style="font-size:.65rem;font-weight:700;text-shadow:0 1px 3px rgba(0,0,0,.5);color:#fff;letter-spacing:.05em;text-transform:uppercase;">BLANCO</span>
-          </div>
-        </div>
+        <div id="undbaseWarn2" style="display:none;margin-top:7px;" class="ibox warn"></div>
       </div>
-      <div id="shirtColorCustomBox" style="display:none;margin-top:6px;">
-        <div class="f">
-          <label>Especifica el color</label>
-          <input type="text" id="shirtColorCustom" placeholder="Ej: Dusty Rose, Seafoam, Pepper..." oninput="calc()">
-        </div>
-      </div>
-      <div id="colorUpchargeBox" style="display:none;margin-top:6px;" class="ibox warn">
-        ⚠️ <strong>Color especial</strong> — upcharge de <strong id="colorUpchargeLabel">$0.00</strong>/pieza aplicado al costo.
-      </div>
-      <div id="undbaseWarn" style="display:none;margin-top:7px;" class="ibox warn">
-        ⚠️ <strong>Camisa oscura detectada.</strong> Se agrega underbase blanco automáticamente.
-      </div>
-      <!-- Hidden tone selector (auto-set) -->
-      <div style="display:none;">
-        <select id="shirtTone" onchange="checkUnderbase()">
-          <option value="light">Blanco / Claro</option>
-          <option value="medium">Medio</option>
-          <option value="dark">Oscuro</option>
-          <option value="black">Negro</option>
-        </select>
-      </div>
+
+      <!-- Hidden tone (auto-set by color selection) -->
+      <select id="shirtTone" style="display:none;" onchange="checkUnderbase()">
+        <option value="light">Claro</option>
+        <option value="medium">Medio</option>
+        <option value="dark">Oscuro</option>
+        <option value="black">Negro</option>
+      </select>
     </div>
 
     <!-- Garment type -->
@@ -1132,10 +1122,14 @@ async function initSSA() {
     } else {
       st.className = 'ssa-status err';
       st.textContent = '⚠ No se pudo conectar a SS&A (error ' + r.status + '). Verifica las env vars en Vercel.';
+      document.getElementById('colorNoGarment').style.display = 'none';
+      document.getElementById('colorManualOnly').style.display = 'block';
     }
   } catch(e) {
     st.className = 'ssa-status err';
     st.textContent = '⚠ Sin conexión al proxy. ¿Está desplegado en Vercel?';
+    document.getElementById('colorNoGarment').style.display = 'none';
+    document.getElementById('colorManualOnly').style.display = 'block';
   }
 }
 
@@ -1172,13 +1166,13 @@ async function searchSSA() {
 
 async function loadStylePrices(styleID, name) {
   const res = document.getElementById('ssaResults');
-  res.innerHTML = '<div class="prod-item"><div class="prod-img-ph">⏳</div><div class="prod-info"><div class="prod-name">Cargando precios de tu cuenta…</div></div></div>';
+  res.innerHTML = '<div class="prod-item"><div class="prod-img-ph">⏳</div><div class="prod-info"><div class="prod-name">Cargando precios y colores…</div></div></div>';
   try {
     const r = await fetch('/api/ssa-products?styleid=' + styleID);
     const data = await r.json();
     if (!data || !data.prices || data.prices.length === 0) return;
 
-    // Find base price (S-XL or cheapest)
+    // Find base price (S-XL)
     const sxl = data.prices.find(p =>
       p.sizePriceCodeName === 'S-XL' || p.sizePriceCodeName === 'S/M-XL/XXL' ||
       p.sizeName === 'M' || p.sizeName === 'L'
@@ -1193,13 +1187,35 @@ async function loadStylePrices(styleID, name) {
       document.getElementById('shirtCost').value = sxl.customerPrice.toFixed(2);
       document.querySelectorAll('#shirtPresets .pb').forEach(b => b.classList.remove('on'));
 
-      // Update upcharges
-      if (xxl)  { document.getElementById('up2xl').value = (xxl.customerPrice  - sxl.customerPrice).toFixed(2); }
-      if (xxxl) { document.getElementById('up3xl').value = (xxxl.customerPrice - sxl.customerPrice).toFixed(2); }
-      if (x4)   { document.getElementById('up4xl').value = (x4.customerPrice   - sxl.customerPrice).toFixed(2); }
-      if (x5)   { document.getElementById('up5xl').value = (x5.customerPrice   - sxl.customerPrice).toFixed(2); }
+      if (xxl)  document.getElementById('up2xl').value = (xxl.customerPrice  - sxl.customerPrice).toFixed(2);
+      if (xxxl) document.getElementById('up3xl').value = (xxxl.customerPrice - sxl.customerPrice).toFixed(2);
+      if (x4)   document.getElementById('up4xl').value = (x4.customerPrice   - sxl.customerPrice).toFixed(2);
+      if (x5)   document.getElementById('up5xl').value = (x5.customerPrice   - sxl.customerPrice).toFixed(2);
 
-      // Show live price box WITH image
+      // ── Render color swatches ──
+      const colors = data.colors || [];
+      if (colors.length > 0) {
+        document.getElementById('colorNoGarment').style.display = 'none';
+        document.getElementById('colorFromSSA').style.display = 'block';
+        document.getElementById('colorManualOnly').style.display = 'none';
+
+        const swatchContainer = document.getElementById('colorSwatches');
+        swatchContainer.innerHTML = colors.map(c => {
+          const oos = !c.inStock ? ' oos' : '';
+          const title = c.colorName + (c.inStock ? '' : ' (out of stock)');
+          if (c.swatchImage) {
+            return `<div class="csw${oos}" title="${title}" onclick="selectSSAColor('${c.colorName.replace(/'/g,"\\'")}','${c.swatchImage||''}',${c.inStock})">
+              <img class="csw-img" src="${c.swatchImage}" alt="${c.colorName}" onerror="this.parentNode.style.background='#555';this.remove()">
+            </div>`;
+          } else {
+            // No swatch image — render a colored square based on name
+            const bg = colorNameToHex(c.colorName);
+            return `<div class="csw${oos}" title="${title}" style="background:${bg};" onclick="selectSSAColor('${c.colorName.replace(/'/g,"\\'")}','',${c.inStock})"></div>`;
+          }
+        }).join('');
+      }
+
+      // Show live price box
       const lp = document.getElementById('ssaLivePrice');
       const imgHtml = data.frontImage
         ? `<img src="${data.frontImage}" style="width:52px;height:52px;object-fit:cover;border-radius:3px;border:1px solid var(--gb);flex-shrink:0;" onerror="this.style.display='none'">`
@@ -1218,7 +1234,7 @@ async function loadStylePrices(styleID, name) {
           <div style="font-size:.82rem;font-weight:700;color:var(--white);margin-bottom:3px;">${data.brandName} ${data.styleName}</div>
           <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:900;color:var(--green);">$${sxl.customerPrice.toFixed(2)} <span style="font-size:.75rem;font-weight:400;color:var(--muted);">S–XL · tu precio wholesale</span></div>
           ${upcharges ? `<div style="font-size:.65rem;color:var(--muted);margin-top:2px;">${upcharges}</div>` : ''}
-          <div style="font-size:.62rem;color:var(--muted);margin-top:2px;">${data.colors ? data.colors.length+' colores disponibles' : ''} · ${data.totalSKUs || ''} SKUs</div>
+          <div style="font-size:.62rem;color:var(--muted);margin-top:2px;">${colors.length ? colors.length+' colores disponibles' : ''} · ${data.totalSKUs || ''} SKUs</div>
         </div>
       </div>`;
       lp.style.display = 'block';
@@ -1286,61 +1302,106 @@ function applyGarmentType() {
   calc();
 }
 
-// ════ SHIRT COLOR ════
-function applyShirtColor() {
-  const sel = document.getElementById('shirtColor');
-  const parts = sel.value.split('|');
-  const colorKey = parts[0];
-  const tone = parts[1];
-  const hex = parts[2] || '#888888';
-  const upcharge = parseFloat(parts[3]) || 0;
+// ════ SHIRT COLOR — from SS&A swatches ════
+let selectedColorName = '';
 
-  // Update color swatch
-  const swatch = document.getElementById('colorSwatch');
-  const swatchLabel = document.getElementById('colorSwatchLabel');
-  if (swatch) {
-    swatch.style.background = hex;
-    // Pick text color based on brightness
-    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-    const brightness = (r*299 + g*587 + b*114) / 1000;
-    swatchLabel.style.color = brightness > 140 ? '#333' : '#fff';
-    swatchLabel.textContent = sel.options[sel.selectedIndex].text.replace(/\s*\(\+.*\)/, '').toUpperCase();
+function selectSSAColor(colorName, swatchImg, inStock) {
+  selectedColorName = colorName;
+
+  // Highlight selected swatch
+  document.querySelectorAll('.csw').forEach(el => el.classList.remove('on'));
+  event.currentTarget.classList.add('on');
+
+  // Show selected box
+  const box = document.getElementById('colorSelectedBox');
+  const chip = document.getElementById('colorChip');
+  const nameEl = document.getElementById('colorSelectedName');
+  const stockEl = document.getElementById('colorStockBadge');
+  box.style.display = 'flex';
+  nameEl.textContent = colorName;
+  stockEl.textContent = inStock ? '✓ En stock' : '⚠ Sin stock';
+  stockEl.style.color = inStock ? 'var(--green)' : 'var(--warn)';
+
+  // Chip: use swatch image or fallback color
+  if (swatchImg) {
+    chip.style.background = `url(${swatchImg}) center/cover`;
+  } else {
+    chip.style.background = colorNameToHex(colorName);
   }
 
-  // Show/hide upcharge box
-  const upBox = document.getElementById('colorUpchargeBox');
-  if (upBox) {
-    upBox.style.display = upcharge > 0 ? 'block' : 'none';
-    const lbl = document.getElementById('colorUpchargeLabel');
-    if (lbl) lbl.textContent = '$' + upcharge.toFixed(2);
-  }
-
-  // Show/hide custom text field
-  const customBox = document.getElementById('shirtColorCustomBox');
-  if (customBox) customBox.style.display = colorKey === 'custom' ? 'block' : 'none';
-
-  // Auto-set tone
+  // Auto-detect tone from color name
+  const tone = detectToneFromName(colorName);
   document.getElementById('shirtTone').value = tone;
-
-  // Trigger underbase logic
   checkUnderbase();
+  calc();
+}
+
+function setManualColor(val) {
+  selectedColorName = val;
+  if (val) {
+    const tone = detectToneFromName(val);
+    document.getElementById('shirtTone').value = tone;
+    checkUnderbase();
+  }
+  calc();
+}
+
+// Detect dark/medium/light from color name string
+function detectToneFromName(name) {
+  const n = name.toLowerCase();
+  if (/\bblack\b|negro/.test(n)) return 'black';
+  if (/navy|dark|charcoal|maroon|forest|hunter|midnight|black|deep\s/.test(n)) return 'dark';
+  if (/heather|grey|gray|medium|royal|red|purple|burgundy|cardinal|garnet|brown|olive/.test(n)) return 'dark';
+  if (/sport.grey|sport.gray|silver|gold|light.blue|carolina/.test(n)) return 'medium';
+  if (/white|natural|ash|cream|ivory|light\s|pale|sand|daisy|yellow/.test(n)) return 'light';
+  return 'medium'; // default to medium — will prompt for underbase
+}
+
+// Fallback hex from color name (when no swatch image)
+function colorNameToHex(name) {
+  const n = name.toLowerCase();
+  if (/black|negro/.test(n)) return '#1a1a1a';
+  if (/navy/.test(n)) return '#001f5b';
+  if (/royal/.test(n)) return '#1034a6';
+  if (/red/.test(n)) return '#c8102e';
+  if (/maroon|cardinal|garnet/.test(n)) return '#800000';
+  if (/forest|hunter/.test(n)) return '#1b5e20';
+  if (/purple/.test(n)) return '#6a0dad';
+  if (/charcoal/.test(n)) return '#36454f';
+  if (/dark.heather/.test(n)) return '#404850';
+  if (/sport.grey|sport.gray/.test(n)) return '#9ca0a4';
+  if (/ash/.test(n)) return '#c8c8c0';
+  if (/gold|yellow|daisy/.test(n)) return '#e8b820';
+  if (/carolina/.test(n)) return '#7bafd4';
+  if (/white/.test(n)) return '#f5f5f0';
+  if (/natural|cream|ivory/.test(n)) return '#ede0c8';
+  return '#607080';
 }
 
 // ════ UNDERBASE ════
 function checkUnderbase() {
   const tone = document.getElementById('shirtTone').value;
-  const warn = document.getElementById('undbaseWarn');
   const undbaseToggle = document.getElementById('undbaseOn');
+
+  // Find whichever warn box is visible
+  const warnIds = ['undbaseWarn', 'undbaseWarn2'];
+  const warn = warnIds.map(id => document.getElementById(id)).find(el => el && el.closest('[style*="display:none"]') === null) 
+    || document.getElementById('undbaseWarn');
+
   if (tone === 'dark' || tone === 'black') {
-    warn.style.display = 'block';
-    warn.innerHTML = '⚠️ <strong>Camisa oscura detectada — underbase agregado automáticamente (+1 pantalla, +flash, velocidad -30%)</strong>';
-    undbaseToggle.checked = true;
+    if (warn) {
+      warn.style.display = 'block';
+      warn.innerHTML = '⚠️ <strong>Camisa oscura detectada — underbase agregado automáticamente (+1 pantalla, +flash, velocidad -30%)</strong>';
+    }
+    if (undbaseToggle) undbaseToggle.checked = true;
   } else if (tone === 'medium') {
-    warn.style.display = 'block';
-    warn.innerHTML = '💡 Tono medio detectado — <strong>¿Agregar underbase para mayor opacidad?</strong> &nbsp;<button onclick="document.getElementById(\'undbaseOn\').checked=true;document.getElementById(\'undbaseWarn\').style.display=\'none\';calc();" style="background:var(--ocean);border:none;color:var(--bg);padding:3px 10px;border-radius:2px;font-family:\'Barlow Condensed\',sans-serif;font-weight:700;cursor:pointer;font-size:.75rem;">Sí</button> &nbsp;<button onclick="document.getElementById(\'undbaseOn\').checked=false;document.getElementById(\'undbaseWarn\').style.display=\'none\';calc();" style="background:var(--gd);border:1px solid var(--gb);color:var(--muted);padding:3px 10px;border-radius:2px;font-family:\'Barlow Condensed\',sans-serif;font-weight:700;cursor:pointer;font-size:.75rem;">No</button>';
+    if (warn) {
+      warn.style.display = 'block';
+      warn.innerHTML = '💡 Tono medio — <strong>¿Agregar underbase para mayor opacidad?</strong> &nbsp;<button onclick="document.getElementById(\'undbaseOn\').checked=true;document.getElementById(\'undbaseWarn\').style.display=\'none\';if(document.getElementById(\'undbaseWarn2\'))document.getElementById(\'undbaseWarn2\').style.display=\'none\';calc();" style="background:var(--ocean);border:none;color:var(--bg);padding:3px 10px;border-radius:2px;font-family:\'Barlow Condensed\',sans-serif;font-weight:700;cursor:pointer;font-size:.75rem;">Sí</button> &nbsp;<button onclick="document.getElementById(\'undbaseOn\').checked=false;document.getElementById(\'undbaseWarn\').style.display=\'none\';if(document.getElementById(\'undbaseWarn2\'))document.getElementById(\'undbaseWarn2\').style.display=\'none\';calc();" style="background:var(--gd);border:1px solid var(--gb);color:var(--muted);padding:3px 10px;border-radius:2px;font-family:\'Barlow Condensed\',sans-serif;font-weight:700;cursor:pointer;font-size:.75rem;">No</button>';
+    }
   } else {
-    warn.style.display = 'none';
-    undbaseToggle.checked = false;
+    warnIds.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    if (undbaseToggle) undbaseToggle.checked = false;
   }
   calc();
 }
@@ -1571,10 +1632,7 @@ function calc() {
   const csg = gch('csgOn');
   const baseShirt = csg ? 0 : gv('shirtCost');
   const u2=gv('up2xl'), u3=gv('up3xl'), u4=gv('up4xl'), u5=gv('up5xl');
-
-  // Color upcharge (neon, tie-dye, camo, etc.)
-  const colorSel = document.getElementById('shirtColor');
-  const colorUpcharge = colorSel ? (parseFloat(colorSel.value.split('|')[3]) || 0) : 0;
+  const colorUpcharge = 0; // Upcharges come from SS&A price per SKU, not hardcoded
 
   // Blended cost accounting for each upcharge tier
   const totalCostRaw = csg ? 0 :
@@ -1811,19 +1869,14 @@ function calc() {
   }
 
   const cn = document.getElementById('clientName').value.trim();
-  const colorSelDisp = document.getElementById('shirtColor');
-  const colorDispParts = colorSelDisp ? colorSelDisp.value.split('|') : [];
-  const colorHex = colorDispParts[2] || '#888';
-  const colorCustomTxt = document.getElementById('shirtColorCustom') ? document.getElementById('shirtColorCustom').value.trim() : '';
-  const colorName = colorDispParts[0] === 'custom'
-    ? (colorCustomTxt || 'Color personalizado')
-    : (colorSelDisp ? colorSelDisp.options[colorSelDisp.selectedIndex].text.replace(/\s*\(\+.*\)/,'') : '');
+  const colorHex = selectedColorName ? colorNameToHex(selectedColorName) : '#607080';
+  const colorLabel = selectedColorName || '';
   document.getElementById('qClientDisp').innerHTML =
-    (cn ? `<span>Para: <strong>${cn}</strong></span> &nbsp;` : '') +
-    `<span style="display:inline-flex;align-items:center;gap:5px;">
-      <span style="width:12px;height:12px;border-radius:2px;background:${colorHex};border:1px solid rgba(255,255,255,.15);display:inline-block;flex-shrink:0;"></span>
-      <span>${colorName}</span>
-    </span>`;
+    (cn ? `<span>Para: <strong>${cn}</strong></span>` : '') +
+    (colorLabel ? `&nbsp;<span style="display:inline-flex;align-items:center;gap:4px;vertical-align:middle;">
+      <span style="width:11px;height:11px;border-radius:2px;background:${colorHex};border:1px solid rgba(255,255,255,.18);display:inline-block;flex-shrink:0;"></span>
+      <span style="font-size:.7rem;">${colorLabel}</span>
+    </span>` : '');
 
   // ── Breakdown ──
   const div = lbl => `<div style="font-size:.58rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ocean);padding:7px 0 3px;margin-top:3px;border-top:1px solid var(--ob);">${lbl}</div>`;
@@ -1994,12 +2047,7 @@ function buildQuoteText() {
   t += `\n`;
   t += `Cantidad: ${qty} piezas\n`;
   t += `Tipo de prenda: ${gs('garmentType')}\n`;
-  // Garment color
-  const colorSel = document.getElementById('shirtColor');
-  const colorVal = colorSel ? colorSel.value.split('|')[0] : '';
-  const colorCustom = document.getElementById('shirtColorCustom') ? document.getElementById('shirtColorCustom').value.trim() : '';
-  const colorLabel = colorVal === 'custom' ? (colorCustom || 'Color personalizado') : (colorSel ? colorSel.options[colorSel.selectedIndex].text : '');
-  if (colorLabel) t += `Color de prenda: ${colorLabel}\n`;
+  if (selectedColorName) t += `Color de prenda: ${selectedColorName}\n`;
   if (csg) t += `⚠ NOTA CSG: Shop no es responsable por misprints, daños, scorching ni errores en prendas del cliente. Cliente verificó que las prendas son aptas para screen printing (algodón adecuado, sin moisture-wicking, sin prints previos en área de impresión). Cliente proveyó 10% extra de prendas. Prendas deben ser nuevas y sin lavar. Sin reembolso de costos de decoración si el daño es por defecto de la prenda. WAIVER FIRMADO REQUERIDO ANTES DE PRODUCIR.\n`;
   if (repeat) t += `Tipo: Reorden (pantallas en archivo, &lt;12 meses)\n`;
   t += `Turnaround: ${tnLabel}\n`;
@@ -2081,7 +2129,6 @@ document.getElementById('flashOn').checked = true;
 document.getElementById('taxOn').checked = true;
 document.getElementById('undbaseOn').addEventListener('change', calc);
 if (!gch('taxExemptOn')) document.getElementById('taxOn').checked = true;
-applyShirtColor(); // init swatch
 initQuoteNum();
 initExpiry();
 renderLocs();
