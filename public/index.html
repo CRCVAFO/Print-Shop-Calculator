@@ -1156,17 +1156,29 @@ async function searchSSA() {
       </div>`;
     }).join('');
   } catch(e) {
-    res.innerHTML = '<div class="prod-item"><div class="prod-img-ph">❌</div><div class="prod-info"><div class="prod-name">Error al buscar</div><div class="prod-meta">Revisa la conexión</div></div></div>';
+    res.innerHTML = `<div class="prod-item"><div class="prod-img-ph">❌</div><div class="prod-info"><div class="prod-name">Error al buscar: ${e.message}</div><div class="prod-meta">Verifica conexión SS&A. ¿Están configuradas SSA_ACCOUNT y SSA_API_KEY en Vercel?</div></div></div>`;
   }
 }
 
 async function loadStylePrices(styleID, name) {
   const res = document.getElementById('ssaResults');
+  res.style.display = 'block';
   res.innerHTML = '<div class="prod-item"><div class="prod-img-ph">⏳</div><div class="prod-info"><div class="prod-name">Cargando precios y colores…</div></div></div>';
   try {
     const r = await fetch('/api/ssa-products?styleid=' + styleID);
+    if (!r.ok) {
+      res.innerHTML = `<div class="prod-item"><div class="prod-img-ph">❌</div><div class="prod-info"><div class="prod-name">Error ${r.status} — no se pudo cargar el estilo</div><div class="prod-meta">Intenta buscar de nuevo o verifica la conexión SS&A</div></div></div>`;
+      return;
+    }
     const data = await r.json();
-    if (!data || !data.prices || data.prices.length === 0) return;
+    if (!data || data.error) {
+      res.innerHTML = `<div class="prod-item"><div class="prod-img-ph">❌</div><div class="prod-info"><div class="prod-name">${data?.error || 'Sin datos para este estilo'}</div></div></div>`;
+      return;
+    }
+    if (!data.prices || data.prices.length === 0) {
+      res.innerHTML = `<div class="prod-item"><div class="prod-img-ph">⚠</div><div class="prod-info"><div class="prod-name">Sin precios disponibles para este estilo</div><div class="prod-meta">Puede que no esté en tu cuenta wholesale</div></div></div>`;
+      return;
+    }
 
     // Find base price (S-XL)
     const sxl = data.prices.find(p =>
@@ -1262,7 +1274,9 @@ async function loadStylePrices(styleID, name) {
     res.style.display = 'none';
     calc();
   } catch(e) {
-    res.innerHTML = '<div class="prod-item"><div class="prod-img-ph">❌</div><div class="prod-info"><div class="prod-name">Error cargando precios</div></div></div>';
+    res.style.display = 'block';
+    res.innerHTML = `<div class="prod-item"><div class="prod-img-ph">❌</div><div class="prod-info"><div class="prod-name">Error: ${e.message}</div><div class="prod-meta">Verifica que Vercel esté desplegado y las env vars SSA_ACCOUNT / SSA_API_KEY estén configuradas</div></div></div>`;
+    console.error('loadStylePrices error:', e);
   }
 }
 
