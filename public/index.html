@@ -212,7 +212,19 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
 .csw-img{width:100%;height:100%;object-fit:cover;border-radius:3px;}
 .color-selected{display:flex;align-items:center;gap:8px;margin-top:8px;padding:7px 10px;background:var(--od);border:1px solid var(--ob);border-radius:3px;font-size:.78rem;}
 .color-chip{width:20px;height:20px;border-radius:3px;border:1px solid rgba(255,255,255,.18);flex-shrink:0;}
-/* Garment selected banner */
+/* Inventory panel */
+.inv-panel{margin-top:10px;background:var(--bg3);border:1px solid var(--gb);border-radius:4px;overflow:hidden;}
+.inv-header{display:flex;align-items:center;justify-content:space-between;padding:7px 11px;background:var(--bg4);border-bottom:1px solid var(--gb);}
+.inv-title{font-size:.6rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);}
+.inv-updated{font-size:.58rem;color:var(--muted);}
+.inv-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:1px;background:var(--gb);}
+.inv-cell{background:var(--bg3);padding:7px 6px;text-align:center;}
+.inv-size{font-size:.58rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
+.inv-qty{font-family:'Barlow Condensed',sans-serif;font-size:1.1rem;font-weight:900;}
+.inv-qty.high{color:var(--green);}
+.inv-qty.low{color:var(--warn);}
+.inv-qty.out{color:var(--danger);}
+.inv-loading{padding:12px;text-align:center;font-size:.72rem;color:var(--muted);}
 .garment-banner{display:flex;align-items:center;gap:10px;padding:8px 11px;background:var(--bg3);border:1px solid var(--gb);border-radius:4px;margin-bottom:9px;}
 .garment-banner img{width:48px;height:48px;object-fit:cover;border-radius:3px;border:1px solid var(--gb);cursor:zoom-in;transition:opacity .15s;flex-shrink:0;}
 .garment-banner img:hover{opacity:.8;}
@@ -283,6 +295,16 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
       <span id="colorStockBadge" style="font-size:.62rem;margin-left:auto;"></span>
     </div>
     <div id="undbaseWarn" style="display:none;margin-top:7px;" class="ibox warn"></div>
+
+    <!-- Inventory panel — shown after color selection -->
+    <div id="invPanel" class="inv-panel" style="display:none;">
+      <div class="inv-header">
+        <span class="inv-title">📦 Stock en tiempo real — <span id="invColorLabel" style="color:var(--white);"></span></span>
+        <span class="inv-updated" id="invUpdated"></span>
+      </div>
+      <div id="invGrid" class="inv-grid"></div>
+    </div>
+
     <!-- Manual fallback -->
     <div id="colorManualFallback" style="display:none;margin-top:6px;">
       <input type="text" id="shirtColorManual" placeholder="Escribe el color manualmente…" oninput="setManualColor(this.value)">
@@ -1051,6 +1073,8 @@ let ssaDefaultImg      = '';
 let ssaGarmentName     = '';
 let ssaDetectedType    = '';
 let ssaColors          = [];
+let ssaCurrentStyleID  = null;
+let ssaInventoryCache  = null; // cached inventory for current style
 
 // ════ EXPERIENCE TABLE (velocidad base para 1 color) ════
 const EXP = {
@@ -1179,6 +1203,11 @@ async function loadStylePrices(styleID, encodedCat, encodedTitle) {
     const xxxl = data.prices.find(p => p.sizePriceCodeName === '3XL' || p.sizeName === '3XL');
     const x4   = data.prices.find(p => p.sizePriceCodeName === '4XL' || p.sizeName === '4XL');
     const x5   = data.prices.find(p => p.sizePriceCodeName === '5XL' || p.sizeName === '5XL');
+
+    // Store styleID for inventory lookup and reset cache
+    ssaCurrentStyleID = styleID;
+    ssaInventoryCache = null;
+    document.getElementById('invPanel').style.display = 'none';
 
     if (sxl) {
       document.getElementById('shirtCost').value = sxl.customerPrice.toFixed(2);
@@ -1354,7 +1383,57 @@ function toggleGarmentTypeOverride() {
   if (open) disp.style.display = 'flex'; else disp.style.display = 'none';
 }
 
-// ════ SHIRT COLOR — from SS&A swatches ════
+// ════ INVENTORY ════
+async function fetchInventory(colorName) {
+  if (!ssaCurrentStyleID) return;
+
+  const panel = document.getElementById('invPanel');
+  const grid  = document.getElementById('invGrid');
+  const lbl   = document.getElementById('invColorLabel');
+  const upd   = document.getElementById('invUpdated');
+
+  panel.style.display = 'block';
+  lbl.textContent = colorName;
+  grid.innerHTML = '<div class="inv-loading">Cargando inventario…</div>';
+
+  try {
+    // Use cache if same style
+    if (!ssaInventoryCache) {
+      const r = await fetch('/api/ssa-inventory?styleid=' + ssaCurrentStyleID);
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      const data = await r.json();
+      ssaInventoryCache = data.inventory || {};
+    }
+
+    const colorData = ssaInventoryCache[colorName] || {};
+    const sizes = ['XS','S','M','L','XL','2XL','3XL','4XL','5XL'];
+    const available = sizes.filter(sz => colorData[sz] !== undefined);
+
+    if (available.length === 0) {
+      grid.innerHTML = '<div class="inv-loading" style="color:var(--warn);">Sin datos de inventario para este color</div>';
+      upd.textContent = '';
+      return;
+    }
+
+    // Render size cells with color-coded quantity
+    grid.innerHTML = available.map(sz => {
+      const qty = colorData[sz] ?? 0;
+      const cls = qty > 100 ? 'high' : qty > 0 ? 'low' : 'out';
+      const label = qty > 999 ? '999+' : qty === 0 ? '✕' : qty;
+      return `<div class="inv-cell">
+        <div class="inv-size">${sz}</div>
+        <div class="inv-qty ${cls}">${label}</div>
+      </div>`;
+    }).join('');
+
+    // SS&A updates inventory every 15 min
+    const now = new Date();
+    upd.textContent = `Actualizado ${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} · cada 15 min`;
+
+  } catch(e) {
+    grid.innerHTML = `<div class="inv-loading" style="color:var(--danger);">Error cargando inventario: ${e.message}</div>`;
+  }
+}
 
 function previewColor(frontImg, colorName) {
   const productImg = document.getElementById('ssaProductImg');
@@ -1419,6 +1498,10 @@ function selectSSAColor(colorName, swatchImg, inStock, frontImg) {
   // Auto tone + underbase
   document.getElementById('shirtTone').value = detectToneFromName(colorName);
   checkUnderbase();
+
+  // Fetch live inventory for this color
+  fetchInventory(colorName);
+
   calc();
 }
 
