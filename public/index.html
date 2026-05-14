@@ -1203,24 +1203,24 @@ async function loadStylePrices(styleID, name) {
         swatchContainer.innerHTML = colors.map(c => {
           const oos = !c.inStock ? ' oos' : '';
           const title = c.colorName + (c.inStock ? '' : ' (out of stock)');
-          if (c.swatchImage) {
-            return `<div class="csw${oos}" title="${title}" onclick="selectSSAColor('${c.colorName.replace(/'/g,"\\'")}','${c.swatchImage||''}',${c.inStock})">
-              <img class="csw-img" src="${c.swatchImage}" alt="${c.colorName}" onerror="this.parentNode.style.background='#555';this.remove()">
+          const frontImg = c.frontImage || '';
+          const swatchSrc = c.swatchImage || '';
+          const hoverFns = frontImg
+            ? `onmouseenter="previewColor('${frontImg}','${c.colorName.replace(/'/g,"\\'")}')" onmouseleave="resetPreview()"`
+            : '';
+          if (swatchSrc) {
+            return `<div class="csw${oos}" title="${title}" ${hoverFns} onclick="selectSSAColor('${c.colorName.replace(/'/g,"\\'")}','${swatchSrc}',${c.inStock},'${frontImg}')">
+              <img class="csw-img" src="${swatchSrc}" alt="${c.colorName}" onerror="this.parentNode.style.background='#555';this.remove()">
             </div>`;
           } else {
-            // No swatch image — render a colored square based on name
             const bg = colorNameToHex(c.colorName);
-            return `<div class="csw${oos}" title="${title}" style="background:${bg};" onclick="selectSSAColor('${c.colorName.replace(/'/g,"\\'")}','',${c.inStock})"></div>`;
+            return `<div class="csw${oos}" title="${title}" style="background:${bg};" ${hoverFns} onclick="selectSSAColor('${c.colorName.replace(/'/g,"\\'")}','',${c.inStock},'${frontImg}')"></div>`;
           }
         }).join('');
       }
 
-      // Show live price box
+      // Show live price box with larger preview
       const lp = document.getElementById('ssaLivePrice');
-      const imgHtml = data.frontImage
-        ? `<img src="${data.frontImage}" style="width:52px;height:52px;object-fit:cover;border-radius:3px;border:1px solid var(--gb);flex-shrink:0;" onerror="this.style.display='none'">`
-        : '<div style="width:52px;height:52px;background:var(--bg3);border-radius:3px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;flex-shrink:0;">👕</div>';
-
       const upcharges = [
         xxl  ? `2XL +$${(xxl.customerPrice-sxl.customerPrice).toFixed(2)}`  : '',
         xxxl ? `3XL +$${(xxxl.customerPrice-sxl.customerPrice).toFixed(2)}` : '',
@@ -1228,15 +1228,28 @@ async function loadStylePrices(styleID, name) {
         x5   ? `5XL +$${(x5.customerPrice-sxl.customerPrice).toFixed(2)}`   : '',
       ].filter(Boolean).join(' · ');
 
-      lp.innerHTML = `<div style="display:flex;align-items:center;gap:10px;">
-        ${imgHtml}
-        <div>
-          <div style="font-size:.82rem;font-weight:700;color:var(--white);margin-bottom:3px;">${data.brandName} ${data.styleName}</div>
-          <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.3rem;font-weight:900;color:var(--green);">$${sxl.customerPrice.toFixed(2)} <span style="font-size:.75rem;font-weight:400;color:var(--muted);">S–XL · tu precio wholesale</span></div>
-          ${upcharges ? `<div style="font-size:.65rem;color:var(--muted);margin-top:2px;">${upcharges}</div>` : ''}
-          <div style="font-size:.62rem;color:var(--muted);margin-top:2px;">${colors.length ? colors.length+' colores disponibles' : ''} · ${data.totalSKUs || ''} SKUs</div>
-        </div>
-      </div>`;
+      // Store colors on window so swatch clicks can update the preview image
+      window._ssaColors = colors;
+      window._ssaDefaultImg = data.frontImage || '';
+
+      lp.innerHTML = `
+        <div style="display:flex;gap:12px;align-items:flex-start;">
+          <!-- Big product image — updates on color select -->
+          <div style="flex-shrink:0;position:relative;">
+            <img id="ssaProductImg" src="${data.frontImage || ''}" alt="${data.brandName} ${data.styleName}"
+              style="width:110px;height:110px;object-fit:cover;border-radius:5px;border:1px solid var(--gb);background:var(--bg3);transition:opacity .15s;"
+              onerror="this.style.display='none'">
+            <div id="ssaImgLabel" style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.55);font-size:.55rem;font-weight:700;letter-spacing:.06em;text-align:center;padding:3px;border-radius:0 0 4px 4px;color:#fff;text-transform:uppercase;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;"></div>
+          </div>
+          <!-- Info -->
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:.85rem;font-weight:700;color:var(--white);margin-bottom:4px;">${data.brandName} ${data.styleName}</div>
+            <div style="font-family:'Barlow Condensed',sans-serif;font-size:1.4rem;font-weight:900;color:var(--green);">$${sxl.customerPrice.toFixed(2)} <span style="font-size:.72rem;font-weight:400;color:var(--muted);">S–XL wholesale</span></div>
+            ${upcharges ? `<div style="font-size:.62rem;color:var(--muted);margin-top:3px;">${upcharges}</div>` : ''}
+            <div style="font-size:.62rem;color:var(--muted);margin-top:4px;">${colors.length ? colors.length+' colores' : ''} · ${data.totalSKUs || ''} SKUs</div>
+            <div id="ssaColorLiveLabel" style="margin-top:5px;font-size:.72rem;color:var(--ocean);font-weight:600;min-height:16px;"></div>
+          </div>
+        </div>`;
       lp.style.display = 'block';
     }
 
@@ -1305,28 +1318,75 @@ function applyGarmentType() {
 // ════ SHIRT COLOR — from SS&A swatches ════
 let selectedColorName = '';
 
-function selectSSAColor(colorName, swatchImg, inStock) {
+function previewColor(frontImg, colorName) {
+  const productImg = document.getElementById('ssaProductImg');
+  const liveLabel = document.getElementById('ssaColorLiveLabel');
+  if (productImg && frontImg) {
+    productImg.style.opacity = '0.7';
+    productImg.src = frontImg;
+  }
+  if (liveLabel) {
+    liveLabel.textContent = '👁 ' + colorName;
+    liveLabel.style.color = 'var(--muted)';
+  }
+}
+
+function resetPreview() {
+  // On mouse leave, if nothing selected yet revert to default; if selected keep it
+  if (!selectedColorName && window._ssaDefaultImg) {
+    const productImg = document.getElementById('ssaProductImg');
+    if (productImg) { productImg.style.opacity = '1'; productImg.src = window._ssaDefaultImg; }
+    const liveLabel = document.getElementById('ssaColorLiveLabel');
+    if (liveLabel) liveLabel.textContent = '';
+  } else if (selectedColorName) {
+    const productImg = document.getElementById('ssaProductImg');
+    if (productImg) productImg.style.opacity = '1';
+    // Restore selected label
+    const liveLabel = document.getElementById('ssaColorLiveLabel');
+    if (liveLabel) liveLabel.style.color = 'var(--ocean)';
+  }
+}
+
+function selectSSAColor(colorName, swatchImg, inStock, frontImg) {
   selectedColorName = colorName;
 
   // Highlight selected swatch
   document.querySelectorAll('.csw').forEach(el => el.classList.remove('on'));
   event.currentTarget.classList.add('on');
 
-  // Show selected box
+  // ── Update big product preview image ──
+  const productImg = document.getElementById('ssaProductImg');
+  const imgLabel = document.getElementById('ssaImgLabel');
+  const liveLabel = document.getElementById('ssaColorLiveLabel');
+  const newImg = frontImg || window._ssaDefaultImg || '';
+
+  if (productImg && newImg) {
+    productImg.style.opacity = '0.4';
+    productImg.src = newImg;
+    productImg.onload = () => { productImg.style.opacity = '1'; };
+    productImg.onerror = () => { productImg.style.opacity = '1'; };
+  }
+  if (imgLabel) imgLabel.textContent = colorName;
+  if (liveLabel) {
+    liveLabel.textContent = (inStock ? '✓ En stock — ' : '⚠ Sin stock — ') + colorName;
+    liveLabel.style.color = inStock ? 'var(--green)' : 'var(--warn)';
+  }
+
+  // Show selected box below swatches
   const box = document.getElementById('colorSelectedBox');
   const chip = document.getElementById('colorChip');
   const nameEl = document.getElementById('colorSelectedName');
   const stockEl = document.getElementById('colorStockBadge');
-  box.style.display = 'flex';
-  nameEl.textContent = colorName;
-  stockEl.textContent = inStock ? '✓ En stock' : '⚠ Sin stock';
-  stockEl.style.color = inStock ? 'var(--green)' : 'var(--warn)';
-
-  // Chip: use swatch image or fallback color
-  if (swatchImg) {
-    chip.style.background = `url(${swatchImg}) center/cover`;
-  } else {
-    chip.style.background = colorNameToHex(colorName);
+  if (box) box.style.display = 'flex';
+  if (nameEl) nameEl.textContent = colorName;
+  if (stockEl) {
+    stockEl.textContent = inStock ? '✓ En stock' : '⚠ Sin stock';
+    stockEl.style.color = inStock ? 'var(--green)' : 'var(--warn)';
+  }
+  if (chip) {
+    chip.style.background = swatchImg
+      ? `url(${swatchImg}) center/cover`
+      : colorNameToHex(colorName);
   }
 
   // Auto-detect tone from color name
