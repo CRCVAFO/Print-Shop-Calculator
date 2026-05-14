@@ -389,6 +389,9 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
 
   <!-- ③ Tipo + CSG — una sola fila -->
   <div class="sec">
+    <div id="headwearWarn" style="display:none;margin-bottom:10px;" class="ibox warn">
+      🧢 <strong>Gorra / Headwear detectada.</strong> Las gorras generalmente se decoran con <strong>bordado</strong>, no screen printing. Verifica el método de decoración antes de cotizar. Esta calculadora está optimizada para screen printing en prendas planas.
+    </div>
     <div class="g2">
       <div class="f">
         <label>Tipo de prenda <span id="garmentTypeAutoLabel" style="color:var(--ocean);font-size:.6rem;font-weight:700;letter-spacing:.06em;margin-left:4px;">AUTO</span></label>
@@ -1286,18 +1289,27 @@ async function loadStylePrices(styleID, encodedCat, encodedTitle) {
       // ── Auto-detect garment type from SS&A category + title + style name ──
       const cat = (ssaCat + ' ' + ssaTitle + ' ' + (data.styleName || '') + ' ' + (data.brandName || '')).toLowerCase();
       let detectedType = 'tshirt';
-      if (/hoodie|pullover|zip.up|full.zip/.test(cat)) detectedType = 'hoodie';
+      let isHeadwear = false;
+
+      if (/\bcap\b|\bhat\b|beanie|headwear|bucket|snapback|trucker|visor|flexfit|yupoong|richardson/.test(cat)) {
+        isHeadwear = true; // keep tshirt as fallback but show warning
+      } else if (/hoodie|pullover|zip.up|full.zip/.test(cat)) detectedType = 'hoodie';
       else if (/crewneck|crew.neck|sweatshirt|fleece/.test(cat)) detectedType = 'crewneck';
       else if (/long.sleeve|ls\b/.test(cat)) detectedType = 'longsleeve';
       else if (/polo|golf/.test(cat)) detectedType = 'polo';
       else if (/jacket|heavy|coat|vest/.test(cat)) detectedType = 'heavy';
+
       const garmentSel = document.getElementById('garmentType');
       garmentSel.value = detectedType;
-      applyGarmentType(); // updates markup default too
+      applyGarmentType();
+
+      // Show/hide headwear warning
+      const hwWarn = document.getElementById('headwearWarn');
+      if (hwWarn) hwWarn.style.display = isHeadwear ? 'block' : 'none';
 
       // Show detected type as hint
       const typeLabels = {tshirt:'T-Shirt / Tank', longsleeve:'Long Sleeve', hoodie:'Hoodie', crewneck:'Crewneck', polo:'Polo', heavy:'Heavy / Jacket'};
-      ssaDetectedType = typeLabels[detectedType] || 'T-Shirt';
+      ssaDetectedType = isHeadwear ? 'Gorra / Headwear' : (typeLabels[detectedType] || 'T-Shirt');
 
       if (xxl)  document.getElementById('up2xl').value = (xxl.customerPrice  - sxl.customerPrice).toFixed(2);
       if (xxxl) document.getElementById('up3xl').value = (xxxl.customerPrice - sxl.customerPrice).toFixed(2);
@@ -1493,7 +1505,11 @@ async function fetchInventory(colorName) {
       ssaInventoryCache = data.inventory || {};
     }
 
-    const whList = ssaInventoryCache[colorName];
+    // Case-insensitive color lookup (SS&A names can have spaces/caps variations)
+    const colorKey = Object.keys(ssaInventoryCache).find(
+      k => k.toLowerCase() === colorName.toLowerCase()
+    ) || colorName;
+    const whList = ssaInventoryCache[colorKey];
     if (!whList || whList.length === 0) {
       grid.innerHTML = '<div class="inv-loading" style="color:var(--warn);">Sin datos para este color</div>';
       return;
