@@ -312,10 +312,6 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
     <option value="dark">Oscuro</option>
     <option value="black">Negro</option>
   </select>
-  <div id="colorNoGarment" style="display:none;"></div>
-  <div id="colorFromSSA" style="display:none;"></div>
-  <div id="colorManualOnly" style="display:none;"></div>
-  <div id="undbaseWarn2" style="display:none;"></div>
 
   <!-- ③ Tipo + CSG — una sola fila -->
   <div class="sec">
@@ -547,18 +543,15 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
     </div>
   </div>
 
-  <!-- Underbase toggle — NUEVO -->
+  <!-- Underbase toggle -->
   <div class="sec">
     <div class="slbl">Underbase (camisas oscuras)</div>
     <div class="trow" id="undbaseRow">
       <div class="tinfo">
         <strong>Agregar underbase blanco</strong>
-        <small>Requerido para imprimir colores en camisa oscura. +1 pantalla, +flash, −velocidad 30%.</small>
+        <small>Se activa automáticamente al seleccionar color oscuro en Tab ① — o actívalo manualmente aquí.</small>
       </div>
       <label class="tog"><input type="checkbox" id="undbaseOn" onchange="calc()"><span class="tk"></span></label>
-    </div>
-    <div id="undbaseInfo" style="display:none;margin-top:5px;">
-      <div class="ibox warn">⚠️ Underbase activo: se agrega <strong>+1 pantalla blanca</strong>, costo de tinta blanca (1.35×), y la velocidad se reduce 30% por ciclo flash adicional.</div>
     </div>
   </div>
 
@@ -1067,7 +1060,6 @@ let turnaroundRate = 0;
 let locs = [{id:1, name:'Front', customName:'', w:12, h:14, colors:2, inkMult:1.0}];
 let nextId = 2;
 let ssaConnected = false;
-let ssaCredentials = {account:'', key:''};
 
 // ════ EXPERIENCE TABLE (velocidad base para 1 color) ════
 const EXP = {
@@ -1332,19 +1324,6 @@ function _lbKeyClose(e) { if (e.key === 'Escape') closeLightbox(); }
 
 // pickShirt removed — presets replaced by SS&A search
 
-async function autoLoadStyleColors(styleNum) {
-  try {
-    const r = await fetch('/api/ssa-products?styleid=' + styleNum);
-    const data = await r.json();
-    if (data && data.prices && data.prices.length > 0) {
-      // Reuse loadStylePrices logic inline via a fake call
-      const fakeResult = document.getElementById('ssaResults');
-      if (fakeResult) fakeResult.style.display = 'none';
-      await loadStylePrices(styleNum, data.brandName + ' ' + data.styleName);
-    }
-  } catch(e) { /* silent fail */ }
-}
-
 // ════ CSG ════
 function toggleCSG() {
   const on = gch('csgOn');
@@ -1495,11 +1474,7 @@ function colorNameToHex(name) {
 function checkUnderbase() {
   const tone = document.getElementById('shirtTone').value;
   const undbaseToggle = document.getElementById('undbaseOn');
-
-  // Find whichever warn box is visible
-  const warnIds = ['undbaseWarn', 'undbaseWarn2'];
-  const warn = warnIds.map(id => document.getElementById(id)).find(el => el && el.closest('[style*="display:none"]') === null) 
-    || document.getElementById('undbaseWarn');
+  const warn = document.getElementById('undbaseWarn');
 
   if (tone === 'dark' || tone === 'black') {
     if (warn) {
@@ -1510,10 +1485,12 @@ function checkUnderbase() {
   } else if (tone === 'medium') {
     if (warn) {
       warn.style.display = 'block';
-      warn.innerHTML = '💡 Tono medio — <strong>¿Agregar underbase para mayor opacidad?</strong> &nbsp;<button onclick="document.getElementById(\'undbaseOn\').checked=true;document.getElementById(\'undbaseWarn\').style.display=\'none\';if(document.getElementById(\'undbaseWarn2\'))document.getElementById(\'undbaseWarn2\').style.display=\'none\';calc();" style="background:var(--ocean);border:none;color:var(--bg);padding:3px 10px;border-radius:2px;font-family:\'Barlow Condensed\',sans-serif;font-weight:700;cursor:pointer;font-size:.75rem;">Sí</button> &nbsp;<button onclick="document.getElementById(\'undbaseOn\').checked=false;document.getElementById(\'undbaseWarn\').style.display=\'none\';if(document.getElementById(\'undbaseWarn2\'))document.getElementById(\'undbaseWarn2\').style.display=\'none\';calc();" style="background:var(--gd);border:1px solid var(--gb);color:var(--muted);padding:3px 10px;border-radius:2px;font-family:\'Barlow Condensed\',sans-serif;font-weight:700;cursor:pointer;font-size:.75rem;">No</button>';
+      warn.innerHTML = '💡 Tono medio — <strong>¿Agregar underbase para mayor opacidad?</strong>'
+        + ' &nbsp;<button onclick="document.getElementById(\'undbaseOn\').checked=true;document.getElementById(\'undbaseWarn\').style.display=\'none\';calc();" style="background:var(--ocean);border:none;color:var(--bg);padding:3px 10px;border-radius:2px;font-family:\'Barlow Condensed\',sans-serif;font-weight:700;cursor:pointer;font-size:.75rem;">Sí</button>'
+        + ' &nbsp;<button onclick="document.getElementById(\'undbaseOn\').checked=false;document.getElementById(\'undbaseWarn\').style.display=\'none\';calc();" style="background:var(--gd);border:1px solid var(--gb);color:var(--muted);padding:3px 10px;border-radius:2px;font-family:\'Barlow Condensed\',sans-serif;font-weight:700;cursor:pointer;font-size:.75rem;">No</button>';
     }
   } else {
-    warnIds.forEach(id => { const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    if (warn) warn.style.display = 'none';
     if (undbaseToggle) undbaseToggle.checked = false;
   }
   calc();
@@ -1654,10 +1631,6 @@ function locChange(id, field, val) {
   else if (field==='colors') { l.colors=Math.max(1,parseInt(val)||1); }
   else if (field==='w'||field==='h') { l[field]=Math.max(0.1,parseFloat(val)||0.1); }
   else if (field==='inkMult') { l.inkMult=parseFloat(val)||1; }
-  // Water-based warning
-  const hasWB = locs.some(l => l.inkMult >= 1.6 && l.inkMult <= 1.8);
-  const wbWarn = document.getElementById('wbWarnBox');
-  if (wbWarn) wbWarn.style.display = hasWB ? 'block' : 'none';
   renderLocs(); calc();
 }
 function applySize(id,w,h) {
@@ -1745,7 +1718,6 @@ function calc() {
   const csg = gch('csgOn');
   const baseShirt = csg ? 0 : gv('shirtCost');
   const u2=gv('up2xl'), u3=gv('up3xl'), u4=gv('up4xl'), u5=gv('up5xl');
-  const colorUpcharge = 0; // Upcharges come from SS&A price per SKU, not hardcoded
 
   // Blended cost accounting for each upcharge tier
   const totalCostRaw = csg ? 0 :
@@ -1754,7 +1726,7 @@ function calc() {
     (baseShirt+u3)*szXXXL +
     (baseShirt+u4)*sz4xl +
     (baseShirt+u5)*sz5xl;
-  const blendedWholesale = csg ? 0 : (totalCostRaw / qty) + colorUpcharge;
+  const blendedWholesale = csg ? 0 : totalCostRaw / qty;
 
   // Garment markup → what customer pays per shirt
   const garmentMarkup = csg ? 1.0 : gv('garmentMarkup');
@@ -1767,11 +1739,6 @@ function calc() {
 
   // ── Underbase ──
   const undbaseOn = gch('undbaseOn');
-  if (undbaseOn) {
-    document.getElementById('undbaseInfo').style.display='block';
-  } else {
-    document.getElementById('undbaseInfo').style.display='none';
-  }
 
   // ── Water-based / Discharge detection (by label, not just multiplier) ──
   const hasWBorDischarge = locs.some(l => {
@@ -2000,9 +1967,8 @@ function calc() {
     bk += row('Prenda del cliente ($0 costo)',0);
     bk += row('Recargo CSG',csgSur,'w');
   } else {
-    bk += row('Prenda blended wholesale (sin upcharge)',blendedWholesale - colorUpcharge);
-    if (colorUpcharge > 0) bk += row('Upcharge color especial',colorUpcharge,'w');
-    bk += row('Markup prenda ('+garmentMarkup.toFixed(2)+'× → cliente)',blendedRetail-blendedWholesale,'g');
+    bk += row('Prenda blended wholesale', blendedWholesale);
+    bk += row('Markup prenda ('+garmentMarkup.toFixed(2)+'× → cliente)', blendedRetail-blendedWholesale, 'g');
   }
   bk += div('Costos del trabajo ÷ '+qty+' piezas');
   bk += `<div style="font-size:.64rem;color:var(--muted);padding:2px 0 5px;">Costos fijos prorrateados. Más piezas = menor costo/pieza.</div>`;
@@ -2036,7 +2002,7 @@ function calc() {
   bk += row('Margen decoración ('+gv('marginSlider')+'%)',decorationMargin,'g');
   if (turnaroundRate>0) bk += row('Rush (+'+(turnaroundRate*100).toFixed(0)+'% sobre job)',rushSurchargePerPiece,'w');
   if (gch('personOn')) bk += row('Personalización ('+gs('personMethod')+')',personCost,'s');
-  if (taxRate>0) bk += row('Sales Tax Jefferson Parish (9.75%)',taxPerPiece,'b');
+  if (taxRate>0) bk += row('Sales Tax Jefferson Parish ('+((taxRate*100).toFixed(2))+'%)',taxPerPiece,'b');
   if (gch('ccFeeOn')) bk += row('CC processing fee',ccFeePerPiece,'w');
   if (gch('net30On')) bk += row('Net 30 recargo (2.5%)',net30PerPiece,'w');
   document.getElementById('bkRows').innerHTML = bk;
@@ -2050,9 +2016,8 @@ function calc() {
   if (repeat && gch('artOn')) alerts.push({t:'w',m:'⚠ Reorden activo + art fee activo. En reorden el arte ya debería estar listo.'});
   if ((gs('shirtTone')==='dark' || gs('shirtTone')==='black') && !undbaseOn) alerts.push({t:'d',m:'⚠ Camisa oscura sin underbase activo. ¿Olvidaste activarlo en Tab ③?'});
   if (csg && qty < gv('csgMin')) alerts.push({t:'w',m:'⚠ CSG con menos de '+gv('csgMin')+' piezas — considera rechazar o subir recargo.'});
-  if (locs.some(l=>l.inkMult>=1.6 && !l.inkMult==1.6) || locs.some(l=>l.inkMult>=1.6)) {
-    const wbLoc = locs.find(l=>l.inkMult>=1.6);
-    if (wbLoc && expLevel==='beginner') alerts.push({t:'w',m:'⚠ Water-based / specialty ink con operador principiante — requiere experiencia intermedia mínima.'});
+  if (locs.some(l => l.inkMult >= 1.6)) {
+    if (expLevel === 'beginner') alerts.push({t:'w', m:'⚠ Water-based / specialty ink con operador principiante — requiere experiencia intermedia mínima.'});
   }
   // Rush complexity warning
   const rushWarnEl = document.getElementById('rushComplexWarn');
@@ -2073,7 +2038,6 @@ function renderTiers(blendedWholesale, blendedRetail, garmentMarkup, csg, csgSur
     setupFee, pmsFee, shipFee, otherFix, inkChangesCost, smallFee, setupLaborCost, breakdownLaborCost, overheadFixed, undbaseOn, gMod) {
   const qtys = [12,24,36,48,72,96,144,250,500,1000];
   const inkSqIn = gv('inkSqIn');
-  const rushMult = 1 + turnaroundRate;
   const minO = gv('minOrder');
   const marginPct = gv('marginSlider')/100;
   const laborRealPerHr = gv('laborRate') * (gv('laborBurden')||1.25);
@@ -2105,7 +2069,6 @@ function renderTiers(blendedWholesale, blendedRetail, garmentMarkup, csg, csgSur
     const decorMargin = decorBase * marginPct;
     const screensPerPU = screensRev / q;
     const preTax = blendedRetail + decorBase + decorMargin + screensPerPU;
-    const rush = preTax * (gch('taxOn') ? 0 : 0);
     const withRush = preTax * (1 + turnaroundRate);
     const tax = withRush * taxRate;
     const cc = withRush * ccFeeRate;
@@ -2159,7 +2122,8 @@ function buildQuoteText() {
   if (expiry) t += `Válido hasta: ${new Date(expiry+'T12:00:00').toLocaleDateString('es-US')}\n`;
   t += `\n`;
   t += `Cantidad: ${qty} piezas\n`;
-  t += `Tipo de prenda: ${gs('garmentType')}\n`;
+  const garmentTypeLabels = {tshirt:'T-Shirt / Tank', longsleeve:'Long Sleeve', hoodie:'Hoodie', crewneck:'Crewneck', polo:'Polo', heavy:'Heavy / Jacket'};
+  t += `Tipo de prenda: ${garmentTypeLabels[gs('garmentType')] || gs('garmentType')}\n`;
   if (selectedColorName) t += `Color de prenda: ${selectedColorName}\n`;
   if (csg) t += `⚠ NOTA CSG: Shop no es responsable por misprints, daños, scorching ni errores en prendas del cliente. Cliente verificó que las prendas son aptas para screen printing (algodón adecuado, sin moisture-wicking, sin prints previos en área de impresión). Cliente proveyó 10% extra de prendas. Prendas deben ser nuevas y sin lavar. Sin reembolso de costos de decoración si el daño es por defecto de la prenda. WAIVER FIRMADO REQUERIDO ANTES DE PRODUCIR.\n`;
   if (repeat) t += `Tipo: Reorden (pantallas en archivo, &lt;12 meses)\n`;
@@ -2179,7 +2143,8 @@ function buildQuoteText() {
   if (taxExempt) {
     t += `Impuesto: EXENTO — ${taxExemptCert||'Certificado en archivo'}\n`;
   } else if (gch('taxOn')) {
-    t += `Incluye Sales Tax Jefferson Parish 9.75%\n`;
+    const displayRate = document.getElementById('taxRateField') ? (parseFloat(document.getElementById('taxRateField').value)||9.75) : 9.75;
+    t += `Incluye Sales Tax Jefferson Parish ${displayRate}%\n`;
   }
   if (gch('depositOn')) {
     const totalNum = parseFloat(document.getElementById('r-total').textContent.replace(/[$k]/g,''))*( document.getElementById('r-total').textContent.includes('k') ? 1000 : 1);
@@ -2241,13 +2206,11 @@ function doCopy(taId,btnId) {
 document.getElementById('flashOn').checked = true;
 document.getElementById('taxOn').checked = true;
 document.getElementById('undbaseOn').addEventListener('change', calc);
-if (!gch('taxExemptOn')) document.getElementById('taxOn').checked = true;
 initQuoteNum();
 initExpiry();
 renderLocs();
 applyMisprintPolicy();
 calc();
-// Check SS&A connection on load
 initSSA();
 </script>
 </body>
