@@ -1224,11 +1224,49 @@ function buildJobLineHTML(line) {
             <div class="garment-banner-price">$${(line.garmentCost||0).toFixed(2)} <span style="font-size:.7rem;color:var(--muted);">S-XL wholesale</span></div>
           </div>
         </div>` : ''}
-        <div id="lineSwatches-${line.id}" class="color-swatches" style="margin-top:8px;"></div>
+      <!-- Swatches rendered inline from stored colors -->
+        <div id="lineSwatches-${line.id}" class="color-swatches" style="margin-top:8px;">
+          ${(line.colors||[]).slice(0,40).map(c => {
+            const bg = c.swatchImage ? `background:url(${c.swatchImage}) center/cover` : `background:${colorNameToHex(c.colorName)}`;
+            const oos = !c.inStock ? ' oos' : '';
+            const front = (c.frontImage||'').replace(/'/g,"\\'");
+            const back  = (c.backImage||'').replace(/'/g,"\\'");
+            const model = (c.modelImage||'').replace(/'/g,"\\'");
+            const name  = c.colorName.replace(/'/g,"\\'");
+            const isSelected = line.color === c.colorName ? ' on' : '';
+            return `<div class="csw${oos}${isSelected}" title="${c.colorName}" style="${bg};"
+              onclick="selectLineColor(${line.id},'${name}','${front}','${back}','${model}')">
+              ${c.swatchImage ? `<img class="csw-img" src="${c.swatchImage}" onerror="this.style.display='none'">` : ''}
+            </div>`;
+          }).join('')}
+        </div>
+
+        <!-- Selected color chip -->
         ${line.color ? `<div class="color-selected" style="margin-top:6px;">
           <div class="color-chip" style="background:${colorNameToHex(line.color)}"></div>
           <span style="font-weight:600;">${line.color}</span>
         </div>` : ''}
+
+        <!-- Image viewer (appears after color selection) -->
+        <div id="lineImgViewer-${line.id}" style="display:${line.colorImgs ? 'block' : 'none'};margin-top:8px;">
+          <div class="color-images" id="lineImgThumbs-${line.id}">
+            ${line.colorImgs ? [
+              {src:line.colorImgs.front,label:'Front'},
+              {src:line.colorImgs.back, label:'Back'},
+              {src:line.colorImgs.model,label:'Model'},
+            ].filter(i=>i.src).map((img,i) => {
+              const fname = `${(line.color||'color').replace(/[^a-z0-9]/gi,'_')}_${img.label.toLowerCase()}.jpg`;
+              return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+                <img class="color-img-thumb ${i===0?'on':''}" src="${img.src}" title="${img.label}"
+                  onclick="selectLineImg(this,'${img.src}',${line.id})" onerror="this.parentNode.style.display='none'">
+                <button class="img-dl-btn" onclick="downloadImage('${img.src}','${fname}')">⬇ ${img.label}</button>
+              </div>`;
+            }).join('') : ''}
+          </div>
+          ${line.colorImgs?.front ? `<img id="lineImgMain-${line.id}" class="color-img-main" src="${line.colorImgs.front||''}"
+            onclick="openLightbox(this.src,'${line.color||''}')" style="margin-top:6px;">` : ''}
+        </div>
+
         <div id="lineUndbaseWarn-${line.id}" style="display:none;" class="ibox warn"></div>
       </div>
       <div class="g2" style="margin-bottom:10px;">
@@ -1346,55 +1384,138 @@ async function loadStyleForLine(lineId, styleID, encodedCat, encodedTitle) {
     if (!r.ok) throw new Error('HTTP '+r.status);
     const data = await r.json();
     if (!data.prices||data.prices.length===0) throw new Error('Sin precios');
+
     const sxl = data.prices.find(p=>p.sizePriceCodeName==='S-XL'||p.sizeName==='M')||data.prices[0];
-    line.garmentName=`${data.brandName} ${data.styleName}`; line.garmentCost=sxl.customerPrice;
-    line.garmentImg=data.frontImage||''; line.styleID=styleID; line.avgWeightLbs=data.avgWeightLbs||0.5;
-    const xxl=data.prices.find(p=>p.sizePriceCodeName==='2XL'), xxxl=data.prices.find(p=>p.sizePriceCodeName==='3XL');
-    const x4=data.prices.find(p=>p.sizePriceCodeName==='4XL'), x5=data.prices.find(p=>p.sizePriceCodeName==='5XL');
-    if(xxl) line.upcharges['2XL']=+(xxl.customerPrice-sxl.customerPrice).toFixed(2);
+    line.garmentName  = `${data.brandName} ${data.styleName}`;
+    line.garmentCost  = sxl.customerPrice;
+    line.garmentImg   = data.frontImage||'';
+    line.styleID      = styleID;
+    line.avgWeightLbs = data.avgWeightLbs||0.5;
+    line.colors       = data.colors||[]; // store colors on line object
+
+    const xxl=data.prices.find(p=>p.sizePriceCodeName==='2XL');
+    const xxxl=data.prices.find(p=>p.sizePriceCodeName==='3XL');
+    const x4=data.prices.find(p=>p.sizePriceCodeName==='4XL');
+    const x5=data.prices.find(p=>p.sizePriceCodeName==='5XL');
+    if(xxl)  line.upcharges['2XL']=+(xxl.customerPrice -sxl.customerPrice).toFixed(2);
     if(xxxl) line.upcharges['3XL']=+(xxxl.customerPrice-sxl.customerPrice).toFixed(2);
-    if(x4) line.upcharges['4XL']=+(x4.customerPrice-sxl.customerPrice).toFixed(2);
-    if(x5) line.upcharges['5XL']=+(x5.customerPrice-sxl.customerPrice).toFixed(2);
-    const cat=(decodeURIComponent(encodedCat)+' '+decodeURIComponent(encodedTitle)+' '+(data.styleName||'')).toLowerCase();
-    let gType='tshirt';
-    if(/\bcap\b|\bhat\b|beanie|headwear|snapback|trucker|flexfit|yupoong|richardson/.test(cat)) gType='cap';
-    else if(/hoodie|pullover|zip.up/.test(cat)) gType='hoodie';
-    else if(/crewneck|crew.neck|sweatshirt|fleece/.test(cat)) gType='crewneck';
-    else if(/long.sleeve|ls\b/.test(cat)) gType='longsleeve';
-    else if(/polo|golf/.test(cat)) gType='polo';
-    else if(/jacket|heavy|coat/.test(cat)) gType='heavy';
-    line.garmentType=gType; line.embGarmentType=gType;
-    if(gType==='cap'&&line.method==='sp') line.method='emb';
-    const markups={tshirt:1.7,longsleeve:1.7,hoodie:1.8,crewneck:1.8,polo:1.8,heavy:1.9,cap:1.8};
-    line.garmentMarkup=markups[gType]||1.7;
-    if(data.colors&&data.colors.length>0) { if(res) res.style.display='none'; renderJobLines(); renderLineSwatches(lineId, data.colors); return; }
-    if(res) res.style.display='none';
-    calcLineCost(line); renderJobLines();
-  } catch(e) { if(res) res.innerHTML=`<div class="prod-item"><div class="prod-img-ph">❌</div><div class="prod-info"><div class="prod-name">Error: ${e.message}</div></div></div>`; }
+    if(x4)   line.upcharges['4XL']=+(x4.customerPrice  -sxl.customerPrice).toFixed(2);
+    if(x5)   line.upcharges['5XL']=+(x5.customerPrice  -sxl.customerPrice).toFixed(2);
+
+    // ── Garment type detection — order matters, most specific first ──
+    const cat = (decodeURIComponent(encodedCat)+' '+decodeURIComponent(encodedTitle)+' '+(data.styleName||'')+' '+(data.brandName||'')).toLowerCase();
+    let gType = 'tshirt'; // default
+    if      (/\bcap\b|\bhat\b|beanie|headwear|snapback|trucker|flexfit|yupoong|richardson/.test(cat)) gType = 'cap';
+    else if (/hoodie|pullover|zip.up|full.zip/.test(cat))  gType = 'hoodie';
+    else if (/crewneck|crew.neck|sweatshirt|fleece/.test(cat)) gType = 'crewneck';
+    else if (/long.sleeve|long sleeve|ls\b/.test(cat))     gType = 'longsleeve';
+    else if (/\bpolo\b|golf shirt/.test(cat))              gType = 'polo';
+    else if (/\bjacket\b|outerwear/.test(cat))             gType = 'heavy'; // must be last — "jacket" is generic
+
+    line.garmentType    = gType;
+    line.embGarmentType = gType;
+    if (gType==='cap' && line.method==='sp') line.method = 'emb';
+    const markups = {tshirt:1.7,longsleeve:1.7,hoodie:1.8,crewneck:1.8,polo:1.8,heavy:1.9,cap:1.8};
+    line.garmentMarkup = markups[gType]||1.7;
+
+    if (res) res.style.display = 'none';
+    calcLineCost(line);
+    renderJobLines(); // colors are now stored on line, rendered inside buildJobLineHTML
+
+  } catch(e) {
+    if(res) res.innerHTML=`<div class="prod-item"><div class="prod-img-ph">❌</div><div class="prod-info"><div class="prod-name">Error: ${e.message}</div></div></div>`;
+  }
 }
 
 function renderLineSwatches(lineId, colors) {
   const container = document.getElementById('lineSwatches-'+lineId);
   if (!container) return;
-  container.innerHTML = colors.slice(0,30).map(c => {
-    const bg = c.swatchImage?`background:url(${c.swatchImage}) center/cover`:`background:${colorNameToHex(c.colorName)}`;
-    const oos = !c.inStock?' oos':'';
+  container.innerHTML = colors.slice(0,40).map(c => {
+    const bg = c.swatchImage
+      ? `background:url(${c.swatchImage}) center/cover`
+      : `background:${colorNameToHex(c.colorName)}`;
+    const oos = !c.inStock ? ' oos' : '';
+    // Encode all image URLs safely for inline onclick
+    const front = (c.frontImage||'').replace(/'/g,"\\'");
+    const back  = (c.backImage||'').replace(/'/g,"\\'");
+    const model = (c.modelImage||'').replace(/'/g,"\\'");
+    const name  = c.colorName.replace(/'/g,"\\'");
     return `<div class="csw${oos}" title="${c.colorName}" style="${bg};"
-      onclick="selectLineColor(${lineId},'${c.colorName.replace(/'/g,"\\'")}','${c.frontImage||''}')">
-      ${c.swatchImage?`<img class="csw-img" src="${c.swatchImage}" onerror="this.style.display='none'">`:''}</div>`;
+      onclick="selectLineColor(${lineId},'${name}','${front}','${back}','${model}')">
+      ${c.swatchImage ? `<img class="csw-img" src="${c.swatchImage}" onerror="this.style.display='none'">` : ''}
+    </div>`;
   }).join('');
 }
 
-function selectLineColor(lineId, colorName, frontImg) {
+function selectLineColor(lineId, colorName, frontImg, backImg, modelImg) {
   const line = jobLines.find(l => l.id===lineId);
   if (!line) return;
-  line.color=colorName; if(frontImg) line.garmentImg=frontImg;
-  document.getElementById('lineSwatches-'+lineId)?.querySelectorAll('.csw').forEach(el=>el.classList.remove('on'));
+  line.color     = colorName;
+  line.colorImgs = { front:frontImg, back:backImg, model:modelImg };
+  if (frontImg) line.garmentImg = frontImg;
+
+  // Highlight selected swatch
+  document.getElementById('lineSwatches-'+lineId)
+    ?.querySelectorAll('.csw').forEach(el => el.classList.remove('on'));
   event.currentTarget.classList.add('on');
-  const tone=detectToneFromName(colorName);
-  const warn=document.getElementById('lineUndbaseWarn-'+lineId);
-  if(warn) { warn.style.display=(tone==='dark'||tone==='black')?'block':'none'; warn.innerHTML='⚠️ <strong>Color oscuro — considera underbase en screen print.</strong>'; }
+
+  // Show image viewer with Front / Back / Model thumbnails
+  const viewerEl = document.getElementById('lineImgViewer-'+lineId);
+  const thumbsEl = document.getElementById('lineImgThumbs-'+lineId);
+  const mainEl   = document.getElementById('lineImgMain-'+lineId);
+  const images   = [
+    { src:frontImg, label:'Front' },
+    { src:backImg,  label:'Back'  },
+    { src:modelImg, label:'Model' },
+  ].filter(i => i.src);
+
+  if (images.length > 0 && viewerEl) {
+    viewerEl.style.display = 'block';
+    mainEl.src = images[0].src;
+    thumbsEl.innerHTML = images.map((img, i) => {
+      const fname = `${colorName.replace(/[^a-z0-9]/gi,'_')}_${img.label.toLowerCase()}.jpg`;
+      return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;">
+        <img class="color-img-thumb ${i===0?'on':''}" src="${img.src}" title="${img.label}"
+          onclick="selectLineImg(this,'${img.src}','${lineId}')"
+          onerror="this.parentNode.style.display='none'">
+        <button class="img-dl-btn" onclick="downloadImage('${img.src}','${fname}')">⬇ ${img.label}</button>
+      </div>`;
+    }).join('');
+    if (images.length > 1) {
+      thumbsEl.innerHTML += `<div style="display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:3px;">
+        <button class="img-dl-btn" style="background:var(--od);border-color:var(--ob);color:var(--ocean);"
+          onclick="downloadAllLineImages(${lineId},'${colorName}')">⬇ Todas</button>
+      </div>`;
+    }
+  } else if (viewerEl) {
+    viewerEl.style.display = 'none';
+  }
+
+  // Underbase warning
+  const tone = detectToneFromName(colorName);
+  const warn = document.getElementById('lineUndbaseWarn-'+lineId);
+  if (warn) {
+    warn.style.display = (tone==='dark'||tone==='black') ? 'block' : 'none';
+    warn.innerHTML = '⚠️ <strong>Color oscuro — considera underbase en screen print.</strong>';
+  }
+
   calcLineCost(line); renderJobLineHeader(lineId); calcJobTotal();
+}
+
+function selectLineImg(thumb, src, lineId) {
+  thumb.closest('.color-images')?.querySelectorAll('.color-img-thumb').forEach(t => t.classList.remove('on'));
+  thumb.classList.add('on');
+  document.getElementById('lineImgMain-'+lineId).src = src;
+}
+
+function downloadAllLineImages(lineId, colorName) {
+  const line = jobLines.find(l => l.id===lineId);
+  if (!line?.colorImgs) return;
+  const imgs = Object.entries(line.colorImgs).filter(([,v])=>v);
+  imgs.forEach(([label, url], i) => {
+    const fname = `${colorName.replace(/[^a-z0-9]/gi,'_')}_${label}.jpg`;
+    setTimeout(() => downloadImage(url, fname), i * 600);
+  });
 }
 
 async function initSSA() {
