@@ -285,9 +285,9 @@ kbd{background:var(--bg3);border:1px solid var(--gb);border-radius:2px;padding:2
 .ship-estimate{margin-top:8px;padding:8px 10px;background:var(--od);border:1px solid var(--ob);border-radius:3px;font-size:.75rem;}
 /* Color image viewer */
 .color-images{display:flex;gap:6px;margin-top:8px;}
-.color-img-thumb{width:52px;height:52px;object-fit:cover;border-radius:3px;border:2px solid transparent;cursor:pointer;transition:all .15s;}
+.color-img-thumb{width:56px;height:56px;object-fit:cover;border-radius:3px;border:2px solid transparent;cursor:pointer;transition:all .15s;}
 .color-img-thumb:hover,.color-img-thumb.on{border-color:var(--ocean);}
-.color-img-main{width:100%;max-height:200px;object-fit:contain;border-radius:4px;border:1px solid var(--gb);margin-top:6px;cursor:zoom-in;}
+.color-img-main{width:100%;max-height:420px;object-fit:contain;border-radius:4px;border:1px solid var(--gb);margin-top:6px;cursor:zoom-in;background:var(--bg3);}
 .garment-banner{display:flex;align-items:center;gap:10px;padding:8px 11px;background:var(--bg3);border:1px solid var(--gb);border-radius:4px;margin-bottom:9px;}
 .garment-banner img{width:48px;height:48px;object-fit:cover;border-radius:3px;border:1px solid var(--gb);cursor:zoom-in;transition:opacity .15s;flex-shrink:0;}
 .garment-banner img:hover{opacity:.8;}
@@ -1441,6 +1441,14 @@ function selectLineColor(lineId, colorName, frontImg, backImg, modelImg) {
   line.colorImgs = { front:frontImg||'', back:backImg||'', model:modelImg||'' };
   if (frontImg) line.garmentImg = frontImg;
 
+  // Update garment banner image to show selected color
+  const bannerImg = document.querySelector(`#jl-${lineId} .garment-banner img`);
+  if (bannerImg && frontImg) {
+    bannerImg.style.opacity = '0.5';
+    bannerImg.src = frontImg;
+    bannerImg.onload = () => bannerImg.style.opacity = '1';
+  }
+
   // Highlight swatch without re-render
   document.getElementById('lineSwatches-'+lineId)
     ?.querySelectorAll('.csw').forEach(el => el.classList.remove('on'));
@@ -1469,8 +1477,13 @@ function selectLineColor(lineId, colorName, frontImg, backImg, modelImg) {
 
   if (images.length > 0) {
     if (viewerEl) viewerEl.style.display = 'block';
-    if (mainEl)   { mainEl.src = images[0].src; mainEl.style.display = 'block';
-      mainEl.onclick = () => openLightbox(images[0].src, colorName); }
+    if (mainEl) {
+      mainEl.style.opacity = '0.3';
+      mainEl.src = images[0].src;
+      mainEl.style.display = 'block';
+      mainEl.onload = () => { mainEl.style.transition = 'opacity .2s'; mainEl.style.opacity = '1'; };
+      mainEl.onclick = () => openLightbox(images[0].src, colorName);
+    }
     if (thumbsEl) {
       thumbsEl.innerHTML = images.map((img, i) => {
         const fname = `${colorName.replace(/[^a-z0-9]/gi,'_')}_${img.label.toLowerCase()}.jpg`;
